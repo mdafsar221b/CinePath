@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Movie, TVShow, WatchedSeason } from "@/lib/types";
+import { Movie, TVShow, WatchedSeason, NewMovie } from "@/lib/types";
 import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
 import { StatCard } from "@/components/core/StatCard";
 import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
@@ -14,15 +14,31 @@ const HomePage = () => {
     const [tvShows, setTVShows] = useState<TVShow[]>([]);
 
     const fetchMovies = async () => {
-        const res = await fetch("/api/movies");
-        const data = await res.json();
-        setMovies(data);
+        try {
+            const res = await fetch("/api/movies");
+            if (!res.ok) {
+                throw new Error("Failed to fetch movies");
+            }
+            const data = await res.json();
+            setMovies(data);
+            console.log("Fetched Movies:", data);
+        } catch (e) {
+            console.error("Error fetching movies:", e);
+        }
     };
 
     const fetchTVShows = async () => {
-        const res = await fetch("/api/tv-shows");
-        const data = await res.json();
-        setTVShows(data);
+        try {
+            const res = await fetch("/api/tv-shows");
+            if (!res.ok) {
+                throw new Error("Failed to fetch TV shows");
+            }
+            const data = await res.json();
+            setTVShows(data);
+            console.log("Fetched TV shows:", data);
+        } catch (e) {
+            console.error("Error fetching TV shows:", e);
+        }
     };
 
     useEffect(() => {
@@ -30,7 +46,7 @@ const HomePage = () => {
         fetchTVShows();
     }, []);
 
-    const handleAddMovie = async (newMovie: Omit<Movie, 'id'>) => {
+    const handleAddMovie = async (newMovie: NewMovie) => {
         await fetch("/api/movies", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -39,14 +55,15 @@ const HomePage = () => {
         fetchMovies();
     };
 
-    const handleRemoveMovie = async (id: string) => {
-        await fetch(`/api/movies?id=${id}`, { method: "DELETE" });
+    const handleRemoveMovie = async (_id: string) => {
+        await fetch(`/api/movies?id=${_id}`, { method: "DELETE" });
         fetchMovies();
     };
 
-    const handleAddTVShow = async (title: string, newSeason: WatchedSeason) => {
+    const handleAddTVShow = async (title: string, poster_path: string | null, newSeason: WatchedSeason) => {
         const body = {
             title,
+            poster_path,
             seasonsWatched: [newSeason],
         };
         await fetch("/api/tv-shows", {
@@ -57,8 +74,8 @@ const HomePage = () => {
         fetchTVShows();
     };
 
-    const handleRemoveTVShow = async (id: string) => {
-        await fetch(`/api/tv-shows?id=${id}`, { method: "DELETE" });
+    const handleRemoveTVShow = async (_id: string) => {
+        await fetch(`/api/tv-shows?id=${_id}`, { method: "DELETE" });
         fetchTVShows();
     };
 
@@ -96,8 +113,8 @@ const HomePage = () => {
                 <h2 className="text-2xl font-light mb-4">Movies Watched</h2>
                 <div className="grid gap-2">
                     {movies.length > 0 ? (
-                        movies.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((movie) => (
-                            <MovieCard key={movie.id?.toString() || movie.id} movie={movie as Movie} onRemove={handleRemoveMovie} />
+                        movies.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((movie: any) => (
+                            <MovieCard key={movie._id.toString()} movie={movie as Movie} onRemove={handleRemoveMovie} />
                         ))
                     ) : (
                         <p className="text-muted-foreground text-sm">No movies added yet. Add one to get started!</p>
@@ -109,8 +126,8 @@ const HomePage = () => {
                 <h2 className="text-2xl font-light mb-4">TV Shows Watched</h2>
                 <div className="grid gap-2">
                     {tvShows.length > 0 ? (
-                        tvShows.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((show) => (
-                            <TVShowCard key={show.id?.toString() || show.id} show={show as TVShow} onRemove={handleRemoveTVShow} />
+                        tvShows.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((show: any) => (
+                            <TVShowCard key={show._id.toString()} show={show as TVShow} onRemove={handleRemoveTVShow} />
                         ))
                     ) : (
                         <p className="text-muted-foreground text-sm">No TV shows added yet. Add one to get started!</p>

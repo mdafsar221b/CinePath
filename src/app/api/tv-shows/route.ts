@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { title, seasonsWatched } = body;
+        const { title, poster_path, seasonsWatched } = body;
 
-        // Find existing TV show with the same title
+  
         const existingShow = await db.collection("tv_shows").findOne({ title: { $regex: new RegExp(`^${title}$`, 'i') } });
 
         if (existingShow) {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
             }
             return NextResponse.json({ message: "TV show updated" });
         } else {
-            const result = await db.collection("tv_shows").insertOne({ ...body, addedAt: new Date() });
+            const result = await db.collection("tv_shows").insertOne({ title, poster_path, seasonsWatched, addedAt: new Date() });
             return NextResponse.json(result, { status: 201 });
         }
     } catch (e) {

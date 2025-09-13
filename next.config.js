@@ -8,6 +8,13 @@ const nextConfig = {
                 port: '',
                 pathname: '/**',
             },
+          
+            {
+                protocol: 'https',
+                hostname: 'omdbapi.com',
+                port: '',
+                pathname: '/**',
+            },
         ],
     },
 };

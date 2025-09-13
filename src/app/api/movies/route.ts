@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET() {
     try {
         const client = await clientPromise;
-        const db = client.db("cinepath"); // You can name your database anything
+        const db = client.db("cinepath"); 
         const movies = await db.collection("movies").find({}).sort({ addedAt: -1 }).toArray();
         return NextResponse.json(movies);
     } catch (e) {
@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const result = await db.collection("movies").insertOne({ ...body, addedAt: new Date() });
+        const { title, year, poster_path } = body;
+        const result = await db.collection("movies").insertOne({ title, year, poster_path, addedAt: new Date() });
         return NextResponse.json(result, { status: 201 });
     } catch (e) {
         return NextResponse.json({ error: "Failed to add movie" }, { status: 500 });
