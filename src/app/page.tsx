@@ -85,11 +85,10 @@ const HomePage = () => {
     const episodesWatchedCount = tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.reduce((sum, season) => sum + (season.episodes || 0), 0) || 0), 0);
 
     const moviesByYear = movies.reduce((acc, movie) => {
-        const year = movie.year?.toString() || 'Unknown';
+        const year = new Date(movie.addedAt).getFullYear().toString();
         acc[year] = (acc[year] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
-
     return (
         <main className="container mx-auto p-4 md:p-8 min-h-screen font-sans antialiased text-foreground">
             <header className="flex flex-col items-start md:flex-row md:items-center justify-between gap-4 mb-8">

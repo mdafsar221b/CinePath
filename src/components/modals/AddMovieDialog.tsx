@@ -149,9 +149,9 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
                           </div>
 
                       ) : (
-                        <div className="flex h-[75px] w-[50px] items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[8px] text-muted-foreground">
-                          Poster Not Available
-                        </div>
+                            <div className="flex items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[8px] text-muted-foreground w-[50px] h-[75px]">
+                              Poster Not Available
+                            </div>
                       )}
                       <div className="flex-1">
                         <h4 className="font-light">{movie.title}</h4>

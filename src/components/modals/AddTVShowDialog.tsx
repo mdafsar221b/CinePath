@@ -70,7 +70,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     }
   };
 
-  const posterBaseUrl = "https://image.tmdb.org/t/p/w500";
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -112,18 +112,20 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                       className="flex items-center gap-4 p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => setSelectedShow(show)}
                     >
-                      {show.poster_path ? (
+                     {show.poster_path ? (
+                      <div className="relative w-[50px] h-[75px]">
                         <Image
-                          src={`${posterBaseUrl}${show.poster_path}`}
+                          src={show.poster_path}
                           alt={`${show.name} poster`}
-                          width={50}
-                          height={75}
+                          fill
                           className="rounded-lg object-cover"
                         />
-                      ) : (
-                        <div className="flex h-[75px] w-[50px] items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[8px] text-muted-foreground">
-                          Poster Not Available
-                        </div>
+
+                      </div>
+                  ) : (
+                        <div className="flex items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[8px] text-muted-foreground w-[50px] h-[75px]">
+                                Poster Not Available
+                              </div>
                       )}
                       <div className="flex-1">
                         <h4 className="font-light">{show.name}</h4>
@@ -141,18 +143,19 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
         ) : (
           <form onSubmit={handleAdd} className="grid gap-4 py-4">
             <div className="flex items-center gap-4 p-2">
-              {selectedShow.poster_path ? (
-                <Image
-                  src={`${posterBaseUrl}${selectedShow.poster_path}`}
-                  alt={`${selectedShow.name} poster`}
-                  width={75}
-                  height={112}
-                  className="rounded-lg object-cover"
-                />
-              ) : (
-                <div className="flex h-[112px] w-[75px] items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[10px] text-muted-foreground">
-                  Poster Not Available
-                </div>
+                 {selectedShow.poster_path ? (
+                  <div className="relative w-[75px] h-[112px]">
+                    <Image
+                      src={selectedShow.poster_path}
+                      alt={`${selectedShow.name} poster`}
+                      fill
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  ) : (
+              <div className="flex items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[8px] text-muted-foreground w-[50px] h-[75px]">
+                        Poster Not Available
+                      </div>
               )}
               <h3 className="text-xl font-light">{selectedShow.name}</h3>
             </div>
