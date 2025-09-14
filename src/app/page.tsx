@@ -8,10 +8,12 @@ import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
 import { MovieCard } from "@/components/core/MovieCard";
 import { TVShowCard } from "@/components/core/TVShowCard";
 import { Badge } from "@/components/ui/badge";
+import { DetailsDialog } from "@/components/modals/DetailsDialog";
 
 const HomePage = () => {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [tvShows, setTVShows] = useState<TVShow[]>([]);
+    const [selectedItem, setSelectedItem] = useState<{ id: string, type: "movie" | "tv-show" } | null>(null);
 
     const fetchMovies = async () => {
         try {
@@ -21,7 +23,6 @@ const HomePage = () => {
             }
             const data = await res.json();
             setMovies(data);
-            console.log("Fetched Movies:", data);
         } catch (e) {
             console.error("Error fetching movies:", e);
         }
@@ -35,7 +36,6 @@ const HomePage = () => {
             }
             const data = await res.json();
             setTVShows(data);
-            console.log("Fetched TV shows:", data);
         } catch (e) {
             console.error("Error fetching TV shows:", e);
         }
@@ -89,6 +89,7 @@ const HomePage = () => {
         acc[year] = (acc[year] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
+
     return (
         <main className="container mx-auto p-4 md:p-8 min-h-screen font-sans antialiased text-foreground">
             <header className="flex flex-col items-start md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -113,7 +114,12 @@ const HomePage = () => {
                 <div className="grid gap-2">
                     {movies.length > 0 ? (
                         movies.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((movie: any) => (
-                            <MovieCard key={movie._id.toString()} movie={movie as Movie} onRemove={handleRemoveMovie} />
+                            <MovieCard
+                                key={movie._id.toString()}
+                                movie={movie as Movie}
+                                onRemove={handleRemoveMovie}
+                                onClick={() => setSelectedItem({ id: movie.imdbID, type: "movie" })}
+                            />
                         ))
                     ) : (
                         <p className="text-muted-foreground text-sm">No movies added yet. Add one to get started!</p>
@@ -126,7 +132,12 @@ const HomePage = () => {
                 <div className="grid gap-2">
                     {tvShows.length > 0 ? (
                         tvShows.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((show: any) => (
-                            <TVShowCard key={show._id.toString()} show={show as TVShow} onRemove={handleRemoveTVShow} />
+                            <TVShowCard
+                                key={show._id.toString()}
+                                show={show as TVShow}
+                                onRemove={handleRemoveTVShow}
+                                onClick={() => setSelectedItem({ id: show.imdbID, type: "tv-show" })}
+                            />
                         ))
                     ) : (
                         <p className="text-muted-foreground text-sm">No TV shows added yet. Add one to get started!</p>
@@ -144,6 +155,15 @@ const HomePage = () => {
                     ))}
                 </div>
             </section>
+
+            {selectedItem && (
+                <DetailsDialog
+                    id={selectedItem.id}
+                    type={selectedItem.type}
+                    open={!!selectedItem}
+                    onOpenChange={() => setSelectedItem(null)}
+                />
+            )}
         </main>
     );
 };
