@@ -64,3 +64,19 @@ export type DetailedContent = {
   imdbRating: string;
   type: 'movie' | 'tv';
 };
+
+export type WatchlistItem = {
+  _id: string;
+  id: string;
+  title: string;
+  year?: string;
+  poster_path?: string | null;
+  type: 'movie' | 'tv';
+  genre?: string;
+  plot?: string;
+  rating?: string;
+  actors?: string;
+  director?: string;
+  imdbRating?: string;
+  addedAt: Date;
+};

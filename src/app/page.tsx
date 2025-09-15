@@ -1,14 +1,16 @@
-// src/app/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent } from "@/lib/types";
+import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem } from "@/lib/types";
 import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
 import { StatCard } from "@/components/core/StatCard";
 import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
 import { MovieCard } from "@/components/core/MovieCard";
 import { TVShowCard } from "@/components/core/TVShowCard";
+import { WatchlistCard } from "@/components/core/WatchlistCard";
 import { DetailsDialog } from "@/components/modals/DetailsDialog";
+import { Header } from "@/components/layout/Header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const HomePage = () => {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [tvShows, setTVShows] = useState<TVShow[]>([]);
+    const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
     const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
     const [filteredTVShows, setFilteredTVShows] = useState<TVShow[]>([]);
     const [movieGenreFilter, setMovieGenreFilter] = useState<string>("all");
@@ -51,9 +54,25 @@ const HomePage = () => {
         }
     };
 
+    const fetchWatchlist = async () => {
+        try {
+            console.log("Fetching watchlist...");
+            const res = await fetch("/api/watchlist");
+            if (!res.ok) {
+                throw new Error("Failed to fetch watchlist");
+            }
+            const data = await res.json();
+            console.log("Fetched watchlist data:", data);
+            setWatchlist(data);
+        } catch (e) {
+            console.error("Error fetching watchlist:", e);
+        }
+    };
+
     useEffect(() => {
         fetchMovies();
         fetchTVShows();
+        fetchWatchlist();
     }, []);
 
     useEffect(() => {
@@ -89,23 +108,24 @@ const HomePage = () => {
         await fetch(`/api/movies?id=${_id}`, { method: "DELETE" });
         fetchMovies();
     };
+
     const handleAddTVShow = async (title: string, poster_path: string | null, newSeason: WatchedSeason) => {
-        const body = {
-            title,
-            poster_path,
-            seasonsWatched: [newSeason],
-        };
-        await fetch("/api/tv-shows", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        });
-        fetchTVShows();
+        console.log("handleAddTVShow called with:", { title, poster_path, newSeason });
+        await fetchTVShows();
     };
 
     const handleRemoveTVShow = async (_id: string) => {
         await fetch(`/api/tv-shows?id=${_id}`, { method: "DELETE" });
         fetchTVShows();
+    };
+
+    const handleRemoveFromWatchlist = async (_id: string) => {
+        try {
+            await fetch(`/api/watchlist?id=${_id}`, { method: "DELETE" });
+            fetchWatchlist();
+        } catch (error) {
+            console.error("Error removing from watchlist:", error);
+        }
     };
 
     const handleShowMovieDetails = async (movie: Movie) => {
@@ -147,6 +167,51 @@ const HomePage = () => {
         }
     };
 
+    const handleShowWatchlistDetails = async (item: WatchlistItem) => {
+        const detailedContent: DetailedContent = {
+            id: item.id,
+            title: item.title,
+            year: item.year || "Unknown",
+            poster_path: item.poster_path || null,
+            genre: item.genre || "N/A",
+            plot: item.plot || "N/A",
+            rating: item.rating || "N/A",
+            actors: item.actors || "N/A",
+            director: item.director || "N/A",
+            imdbRating: item.imdbRating || "N/A",
+            type: item.type
+        };
+        setSelectedContent(detailedContent);
+        setDetailsOpen(true);
+    };
+
+    const handleMarkWatched = async (item: WatchlistItem) => {
+        if (item.type === 'movie') {
+            const movieData = {
+                title: item.title,
+                year: parseInt(item.year || "0"),
+                poster_path: item.poster_path,
+                genre: item.genre,
+                plot: item.plot,
+                rating: item.rating,
+                actors: item.actors,
+                director: item.director,
+                imdbRating: item.imdbRating,
+            };
+            await fetch("/api/movies", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(movieData),
+            });
+            fetchMovies();
+        } else {
+            alert("TV show functionality: Please add this manually for now by selecting season and episodes.");
+        }
+        
+        await fetch(`/api/watchlist?id=${item._id}`, { method: "DELETE" });
+        fetchWatchlist();
+    };
+
     const moviesWatchedCount = movies.length;
     const tvShowsWatchedCount = tvShows.length;
     const seasonsWatchedCount = tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.length || 0), 0);
@@ -171,131 +236,153 @@ const HomePage = () => {
     )).sort();
 
     return (
-        <main className="container mx-auto p-4 md:p-8 min-h-screen font-sans antialiased text-foreground">
-            <header className="flex flex-col items-start md:flex-row md:items-center justify-between gap-4 mb-8">
-                <h1 className="text-3xl md:text-4xl font-light tracking-tight">
-                    CinePath 🎬
-                </h1>
-                <div className="flex gap-2">
-                    <AddMovieDialog onAddMovie={handleAddMovie} />
-                    <AddTVShowDialog onAddTVShow={handleAddTVShow} />
-                </div>
-            </header>
+        <>
+            <Header onWatchlistUpdate={fetchWatchlist} />
+            <main className="container mx-auto p-4 md:p-8 min-h-screen font-sans antialiased text-foreground">
+                <header className="flex flex-col items-start md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <h1 className="text-3xl md:text-4xl font-light tracking-tight">
+                        CinePath 🎬
+                    </h1>
+                    <div className="flex gap-2">
+                        <AddMovieDialog onAddMovie={handleAddMovie} />
+                        <AddTVShowDialog onAddTVShow={handleAddTVShow} />
+                    </div>
+                </header>
 
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard title="Movies Watched" value={moviesWatchedCount} />
-                <StatCard title="TV Shows Watched" value={tvShowsWatchedCount} />
-                <StatCard title="Seasons Watched" value={seasonsWatchedCount} />
-                <StatCard title="Episodes Watched" value={episodesWatchedCount} />
-            </section>
+                <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <StatCard title="Movies Watched" value={moviesWatchedCount} />
+                    <StatCard title="TV Shows Watched" value={tvShowsWatchedCount} />
+                    <StatCard title="Seasons Watched" value={seasonsWatchedCount} />
+                    <StatCard title="Episodes Watched" value={episodesWatchedCount} />
+                </section>
 
-            <section className="mb-8">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                    <h2 className="text-2xl font-light">Movies Watched</h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Filter by genre:</span>
-                        <Select value={movieGenreFilter} onValueChange={setMovieGenreFilter}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="All genres" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All genres</SelectItem>
-                                {movieGenres.map(genre => (
-                                    <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {movieGenreFilter !== "all" && (
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => setMovieGenreFilter("all")}
-                            >
-                                Clear
-                            </Button>
+                <section className="mb-8">
+                    <h2 className="text-2xl font-light mb-4">Watchlist ({watchlist.length})</h2>
+                    <div className="grid gap-2">
+                        {watchlist.length > 0 ? (
+                            watchlist.map((item) => (
+                                <WatchlistCard 
+                                    key={item._id} 
+                                    item={item} 
+                                    onRemove={handleRemoveFromWatchlist}
+                                    onShowDetails={handleShowWatchlistDetails}
+                                    onMarkWatched={handleMarkWatched}
+                                />
+                            ))
+                        ) : (
+                            <p className="text-muted-foreground text-sm">No items in watchlist. Use the search to add movies and TV shows!</p>
                         )}
                     </div>
-                </div>
-                <div className="grid gap-2">
-                    {filteredMovies.length > 0 ? (
-                        filteredMovies.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((movie: any) => (
-                            <MovieCard 
-                                key={movie._id.toString()} 
-                                movie={movie as Movie} 
-                                onRemove={handleRemoveMovie}
-                                onShowDetails={handleShowMovieDetails}
-                            />
-                        ))
-                    ) : movieGenreFilter !== "all" ? (
-                        <p className="text-muted-foreground text-sm">No movies found for the selected genre.</p>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">No movies added yet. Add one to get started!</p>
-                    )}
-                </div>
-            </section>
+                </section>
 
-            <section className="mb-8">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                    <h2 className="text-2xl font-light">TV Shows Watched</h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Filter by genre:</span>
-                        <Select value={tvGenreFilter} onValueChange={setTvGenreFilter}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="All genres" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All genres</SelectItem>
-                                {tvGenres.map(genre => (
-                                    <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {tvGenreFilter !== "all" && (
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => setTvGenreFilter("all")}
-                            >
-                                Clear
-                            </Button>
+                <section className="mb-8">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                        <h2 className="text-2xl font-light">Movies Watched</h2>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Filter by genre:</span>
+                            <Select value={movieGenreFilter} onValueChange={setMovieGenreFilter}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="All genres" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All genres</SelectItem>
+                                    {movieGenres.map(genre => (
+                                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {movieGenreFilter !== "all" && (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setMovieGenreFilter("all")}
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="grid gap-2">
+                        {filteredMovies.length > 0 ? (
+                            filteredMovies.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((movie: any) => (
+                                <MovieCard 
+                                    key={movie._id.toString()} 
+                                    movie={movie as Movie} 
+                                    onRemove={handleRemoveMovie}
+                                    onShowDetails={handleShowMovieDetails}
+                                />
+                            ))
+                        ) : movieGenreFilter !== "all" ? (
+                            <p className="text-muted-foreground text-sm">No movies found for the selected genre.</p>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">No movies added yet. Add one to get started!</p>
                         )}
                     </div>
-                </div>
-                <div className="grid gap-2">
-                    {filteredTVShows.length > 0 ? (
-                        filteredTVShows.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((show: any) => (
-                            <TVShowCard 
-                                key={show._id.toString()} 
-                                show={show as TVShow} 
-                                onRemove={handleRemoveTVShow}
-                                onShowDetails={handleShowTVDetails}
-                            />
-                        ))
-                    ) : tvGenreFilter !== "all" ? (
-                        <p className="text-muted-foreground text-sm">No TV shows found for the selected genre.</p>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">No TV shows added yet. Add one to get started!</p>
-                    )}
-                </div>
-            </section>
+                </section>
 
-            <section>
-                <h2 className="text-2xl font-light mb-4">Yearly Movie Tracker</h2>
-                <div className="flex flex-wrap gap-2">
-                    {Object.entries(moviesByYear).sort(([yearA], [yearB]) => Number(yearB) - Number(yearA)).map(([year, count]) => (
-                        <Badge key={year} className="bg-primary text-primary-foreground rounded-full px-4 py-1 font-normal text-sm">
-                            {year}: {count}
-                        </Badge>
-                    ))}
-                </div>
-            </section>
+                <section className="mb-8">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                        <h2 className="text-2xl font-light">TV Shows Watched</h2>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Filter by genre:</span>
+                            <Select value={tvGenreFilter} onValueChange={setTvGenreFilter}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="All genres" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All genres</SelectItem>
+                                    {tvGenres.map(genre => (
+                                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {tvGenreFilter !== "all" && (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setTvGenreFilter("all")}
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="grid gap-2">
+                        {filteredTVShows.length > 0 ? (
+                            filteredTVShows.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((show: any) => (
+                                <TVShowCard 
+                                    key={show._id.toString()} 
+                                    show={show as TVShow} 
+                                    onRemove={handleRemoveTVShow}
+                                    onShowDetails={handleShowTVDetails}
+                                />
+                            ))
+                        ) : tvGenreFilter !== "all" ? (
+                            <p className="text-muted-foreground text-sm">No TV shows found for the selected genre.</p>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">No TV shows added yet. Add one to get started!</p>
+                        )}
+                    </div>
+                </section>
 
-            <DetailsDialog 
-                open={detailsOpen} 
-                onOpenChange={setDetailsOpen} 
-                content={selectedContent} 
-            />
-        </main>
+                <section>
+                    <h2 className="text-2xl font-light mb-4">Yearly Movie Tracker</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {Object.entries(moviesByYear).sort(([yearA], [yearB]) => Number(yearB) - Number(yearA)).map(([year, count]) => (
+                            <Badge key={year} className="bg-primary text-primary-foreground rounded-full px-4 py-1 font-normal text-sm">
+                                {year}: {count}
+                            </Badge>
+                        ))}
+                    </div>
+                </section>
+
+                <DetailsDialog 
+                    open={detailsOpen} 
+                    onOpenChange={setDetailsOpen} 
+                    content={selectedContent} 
+                />
+            </main>
+        </>
     );
 };
 
