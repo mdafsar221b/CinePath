@@ -1,3 +1,4 @@
+// src/app/api/tv-shows/route.ts
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,9 +19,8 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { title, poster_path, seasonsWatched } = body;
+        const { title, poster_path, seasonsWatched, genre, plot, rating, actors, imdbRating } = body;
 
-  
         const existingShow = await db.collection("tv_shows").findOne({ title: { $regex: new RegExp(`^${title}$`, 'i') } });
 
         if (existingShow) {
@@ -28,27 +28,61 @@ export async function POST(request: NextRequest) {
             const seasonExists = existingShow.seasonsWatched.some((s: any) => s.season === newSeason.season);
 
             if (seasonExists) {
+                
                 const updatedSeasons = existingShow.seasonsWatched.map((s: any) =>
                     s.season === newSeason.season
-                        ? { ...s, episodes: s.episodes + newSeason.episodes }
+                        ? { ...s, episodes: newSeason.episodes } // REPLACE, not add
                         : s
                 );
                 await db.collection("tv_shows").updateOne(
                     { _id: existingShow._id },
-                    { $set: { seasonsWatched: updatedSeasons } }
+                    { 
+                        $set: { 
+                            seasonsWatched: updatedSeasons,
+                            // Update other fields if they exist in the new data
+                            ...(genre && { genre }),
+                            ...(plot && { plot }),
+                            ...(rating && { rating }),
+                            ...(actors && { actors }),
+                            ...(imdbRating && { imdbRating }),
+                        }
+                    }
                 );
             } else {
+                // Add new season
                 await db.collection("tv_shows").updateOne(
                     { _id: existingShow._id },
-                    { $push: { seasonsWatched: newSeason } }
+                    { 
+                        $push: { seasonsWatched: newSeason },
+                        $set: {
+                            // Update other fields if they exist
+                            ...(genre && { genre }),
+                            ...(plot && { plot }),
+                            ...(rating && { rating }),
+                            ...(actors && { actors }),
+                            ...(imdbRating && { imdbRating }),
+                        }
+                    }
                 );
             }
             return NextResponse.json({ message: "TV show updated" });
         } else {
-            const result = await db.collection("tv_shows").insertOne({ title, poster_path, seasonsWatched, addedAt: new Date() });
+            // Create new TV show
+            const result = await db.collection("tv_shows").insertOne({ 
+                title, 
+                poster_path, 
+                seasonsWatched, 
+                genre,
+                plot,
+                rating,
+                actors,
+                imdbRating,
+                addedAt: new Date() 
+            });
             return NextResponse.json(result, { status: 201 });
         }
     } catch (e) {
+        console.error("TV Show API error:", e);
         return NextResponse.json({ error: "Failed to add/update TV show" }, { status: 500 });
     }
 }

@@ -1,3 +1,4 @@
+// src/app/api/movies/route.ts
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,8 +19,19 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { title, year, poster_path } = body;
-        const result = await db.collection("movies").insertOne({ title, year, poster_path, addedAt: new Date() });
+        const { title, year, poster_path, genre, plot, rating, actors, director, imdbRating } = body;
+        const result = await db.collection("movies").insertOne({ 
+            title, 
+            year, 
+            poster_path, 
+            genre,
+            plot,
+            rating,
+            actors,
+            director,
+            imdbRating,
+            addedAt: new Date() 
+        });
         return NextResponse.json(result, { status: 201 });
     } catch (e) {
         return NextResponse.json({ error: "Failed to add movie" }, { status: 500 });

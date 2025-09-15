@@ -1,3 +1,4 @@
+// src/components/modals/AddMovieDialog.tsx
 "use client";
 
 import {
@@ -58,16 +59,41 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
     }
   };
 
-  const handleAddFromSearch = (movie: SearchResult) => {
-    const movieToAdd: NewMovie = {
-      title: movie.title,
-      year: parseInt(movie.year) || 0,
-      poster_path: movie.poster_path,
-    };
-    onAddMovie(movieToAdd);
-    setOpen(false);
-    setSearchTerm("");
-    setResults([]);
+  const handleAddFromSearch = async (movie: SearchResult) => {
+    try {
+      const detailsRes = await fetch(`/api/details?id=${movie.id}&type=movie`);
+      if (!detailsRes.ok) throw new Error("Failed to fetch movie details");
+      
+      const details = await detailsRes.json();
+      
+      const movieToAdd: NewMovie = {
+        title: details.title,
+        year: parseInt(details.year) || 0,
+        poster_path: details.poster_path,
+        genre: details.genre,
+        plot: details.plot,
+        rating: details.rating,
+        actors: details.actors,
+        director: details.director,
+        imdbRating: details.imdbRating,
+      };
+      
+      onAddMovie(movieToAdd);
+      setOpen(false);
+      setSearchTerm("");
+      setResults([]);
+    } catch (error) {
+      console.error("Error adding movie:", error);
+      const movieToAdd: NewMovie = {
+        title: movie.title,
+        year: parseInt(movie.year) || 0,
+        poster_path: movie.poster_path,
+      };
+      onAddMovie(movieToAdd);
+      setOpen(false);
+      setSearchTerm("");
+      setResults([]);
+    }
   };
 
   const handleManualAdd = (e: React.FormEvent) => {
