@@ -21,6 +21,12 @@ interface SearchResult {
   year: string;
   poster_path: string | null;
   type: 'movie' | 'tv';
+  genre?: string;
+  plot?: string;
+  rating?: string;
+  actors?: string;
+  director?: string;
+  imdbRating?: string;
 }
 
 interface GlobalSearchDialogProps {
@@ -66,7 +72,7 @@ export const GlobalSearchDialog = ({ onSelectContent, onAddToWatchlist }: Global
     try {
       // First get detailed info
       const detailsRes = await fetch(`/api/details?id=${result.id}&type=${result.type === 'tv' ? 'series' : 'movie'}`);
-      let itemData = {
+      let itemData: SearchResult = {
         id: result.id,
         title: result.title,
         year: result.year,
