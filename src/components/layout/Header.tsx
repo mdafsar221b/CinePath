@@ -1,7 +1,8 @@
-// src/components/layout/Header.tsx
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import { GlobalSearchDialog } from "@/components/modals/GlobalSearchDialog";
 import { DetailsDialog } from "@/components/modals/DetailsDialog";
 import { DetailedContent } from "@/lib/types";
@@ -15,11 +16,11 @@ export const Header = ({ onWatchlistUpdate }: HeaderProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<DetailedContent | null>(null);
 
-  const handleSelectContent = async (id: string, type: 'movie' | 'tv') => {
+  const handleSelectContent = async (id: string, type: "movie" | "tv") => {
     try {
-      const res = await fetch(`/api/details?id=${id}&type=${type === 'tv' ? 'series' : 'movie'}`);
+      const res = await fetch(`/api/details?id=${id}&type=${type === "tv" ? "series" : "movie"}`);
       if (!res.ok) throw new Error("Failed to fetch details");
-      
+
       const details = await res.json();
       setSelectedContent(details);
       setDetailsOpen(true);
@@ -31,10 +32,10 @@ export const Header = ({ onWatchlistUpdate }: HeaderProps) => {
   const handleAddToWatchlist = async (item: any) => {
     try {
       console.log("Adding to watchlist:", item);
-      
-      const res = await fetch('/api/watchlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+
+      const res = await fetch("/api/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(item),
       });
 
@@ -50,10 +51,9 @@ export const Header = ({ onWatchlistUpdate }: HeaderProps) => {
         console.error("Failed to add to watchlist:", responseData);
         throw new Error("Failed to add to watchlist");
       }
-      
+
       alert(`${item.title} added to watchlist!`);
-      
-      // Refresh the watchlist on the main page
+
       if (onWatchlistUpdate) {
         onWatchlistUpdate();
       }
@@ -65,25 +65,39 @@ export const Header = ({ onWatchlistUpdate }: HeaderProps) => {
 
   return (
     <>
-      <header className="p-4 md:p-8 border-b border-muted/50 bg-background">
-        <div className="container mx-auto flex items-center justify-between">
-          <Link href="/" className="text-2xl font-light tracking-tight text-foreground hover:text-primary transition-colors duration-200">
-            CinePath 🎬
-          </Link>
-          <div className="flex items-center gap-4">
-            <GlobalSearchDialog 
-              onSelectContent={handleSelectContent} 
-              onAddToWatchlist={handleAddToWatchlist}
-            />
-            <nav className="hidden md:flex space-x-4 text-sm">
-            </nav>
+      <header className="sticky top-0 z-50 glass-card border-b border-border/50 backdrop-blur-xl">
+        <div className="container mx-auto px-4 md:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <motion.div
+                whileHover={{ rotate: 10, scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Image
+                  src="/icon.svg" 
+                  alt="CinePath Logo"
+                  width={32}
+                  height={32}
+                  priority
+                />
+              </motion.div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
+                CinePath
+              </span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <GlobalSearchDialog
+                onSelectContent={handleSelectContent}
+                onAddToWatchlist={handleAddToWatchlist}
+              />
+            </div>
           </div>
         </div>
       </header>
-      <DetailsDialog 
-        open={detailsOpen} 
-        onOpenChange={setDetailsOpen} 
-        content={selectedContent} 
+      <DetailsDialog
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        content={selectedContent}
       />
     </>
   );

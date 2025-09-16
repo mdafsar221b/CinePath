@@ -1,4 +1,3 @@
-// src/components/modals/AddTVShowDialog.tsx
 "use client";
 
 import {
@@ -14,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { WatchedSeason } from "@/lib/types";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import Image from "next/image";
 
 interface AddTVShowDialogProps {
@@ -68,7 +67,6 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     try {
       let showDetails = null;
       
-      // Try to get detailed information
       try {
         const detailsRes = await fetch(`/api/details?id=${selectedShow.id}&type=series`);
         if (detailsRes.ok) {
@@ -105,10 +103,8 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
       const result = await response.json();
       console.log("TV Show added successfully:", result);
       
-      // Call the parent callback
       onAddTVShow(selectedShow.name, selectedShow.poster_path, { season: seasonNumber, episodes: episodeCount });
       
-      // Reset form
       setOpen(false);
       setSearchTerm("");
       setResults([]);
@@ -137,45 +133,52 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="text-sm font-light px-4 py-2 border-primary hover:bg-muted/50 transition-colors duration-200">
-          + Add TV Show
+        <Button 
+          variant="outline" 
+          className="px-6 py-3 glass-card border-primary/30 text-foreground rounded-xl font-medium hover:bg-primary/10 transition-all duration-300 hover:scale-105"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add TV Show
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-card border border-border text-foreground max-w-2xl">
+      <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Add New TV Show</DialogTitle>
-          <DialogDescription>
-            Search for a TV show and manually add the seasons and episodes you have watched.
+          <DialogTitle className="text-xl font-semibold">Add TV Show</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Search for a TV show and add the seasons you've watched.
           </DialogDescription>
         </DialogHeader>
 
         {!selectedShow ? (
           <>
-            <form onSubmit={handleSearch} className="flex gap-2">
+            <form onSubmit={handleSearch} className="flex gap-3">
               <Input
                 id="search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-background border-border"
+                className="flex-1 glass-card border-border/50 rounded-xl"
                 placeholder="Search for a TV show..."
               />
-              <Button type="submit" size="icon" disabled={loading}>
-                <Search />
+              <Button type="submit" size="icon" disabled={loading} className="rounded-xl">
+                <Search className="w-4 h-4" />
               </Button>
             </form>
-            <div className="mt-4 max-h-[400px] overflow-y-auto">
+            <div className="mt-6 max-h-[400px] overflow-y-auto">
               {loading ? (
-                <p className="text-center text-muted-foreground">Searching...</p>
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-muted-foreground">Searching...</p>
+                </div>
               ) : results.length > 0 ? (
-                <div className="grid gap-2">
+                <div className="space-y-3">
                   {results.map((show) => (
                     <div
                       key={show.id}
-                      className="flex items-center gap-4 p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="glass-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 cursor-pointer flex items-center gap-4"
                       onClick={() => setSelectedShow(show)}
                     >
                       {show.poster_path ? (
-                        <div className="relative w-[50px] h-[75px]">
+                        <div className="relative w-[50px] h-[75px] flex-shrink-0">
                           <Image
                             src={show.poster_path}
                             alt={`${show.name} poster`}
@@ -184,28 +187,32 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                           />
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[8px] text-muted-foreground w-[50px] h-[75px]">
-                          Poster Not Available
+                        <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[50px] h-[75px] flex-shrink-0">
+                          No Poster
                         </div>
                       )}
                       <div className="flex-1">
-                        <h4 className="font-light">{show.name}</h4>
+                        <h4 className="font-medium">{show.name}</h4>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : searchTerm && !loading ? (
-                <p className="text-center text-muted-foreground">No results found.</p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No results found.</p>
+                </div>
               ) : (
-                <p className="text-center text-muted-foreground">Start typing to search for a TV show.</p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Start typing to search for a TV show.</p>
+                </div>
               )}
             </div>
           </>
         ) : (
-          <form onSubmit={handleAdd} className="grid gap-4 py-4">
-            <div className="flex items-center gap-4 p-2">
+          <form onSubmit={handleAdd} className="space-y-6">
+            <div className="glass-card rounded-xl p-4 flex items-center gap-4">
               {selectedShow.poster_path ? (
-                <div className="relative w-[75px] h-[112px]">
+                <div className="relative w-[60px] h-[90px] flex-shrink-0">
                   <Image
                     src={selectedShow.poster_path}
                     alt={`${selectedShow.name} poster`}
@@ -214,47 +221,61 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                   />
                 </div>
               ) : (
-                <div className="flex items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[8px] text-muted-foreground w-[75px] h-[112px]">
-                  Poster Not Available
+                <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[60px] h-[90px] flex-shrink-0">
+                  No Poster
                 </div>
               )}
-              <h3 className="text-xl font-light">{selectedShow.name}</h3>
+              <h3 className="text-lg font-semibold">{selectedShow.name}</h3>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="season" className="text-right">
-                Season
-              </Label>
-              <Input
-                id="season"
-                type="number"
-                value={seasonNumber ?? ""}
-                onChange={(e) => setSeasonNumber(Number(e.target.value))}
-                className="col-span-3 bg-background border-border"
-                min="1"
-                required
-              />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="season" className="text-sm font-medium">
+                  Season *
+                </Label>
+                <Input
+                  id="season"
+                  type="number"
+                  value={seasonNumber ?? ""}
+                  onChange={(e) => setSeasonNumber(Number(e.target.value))}
+                  className="glass-card border-border/50 rounded-xl"
+                  min="1"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="episodes" className="text-sm font-medium">
+                  Episodes *
+                </Label>
+                <Input
+                  id="episodes"
+                  type="number"
+                  value={episodeCount ?? ""}
+                  onChange={(e) => setEpisodeCount(Number(e.target.value))}
+                  className="glass-card border-border/50 rounded-xl"
+                  min="1"
+                  required
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="episodes" className="text-right">
-                Episodes
-              </Label>
-              <Input
-                id="episodes"
-                type="number"
-                value={episodeCount ?? ""}
-                onChange={(e) => setEpisodeCount(Number(e.target.value))}
-                className="col-span-3 bg-background border-border"
-                min="1"
-                required
-              />
+            
+            <div className="flex gap-3 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setSelectedShow(null)}
+                className="flex-1 glass-card rounded-xl"
+              >
+                Back to Search
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 rounded-xl"
+                disabled={adding || !seasonNumber || episodeCount === null}
+              >
+                {adding ? "Adding..." : "Add TV Show"}
+              </Button>
             </div>
-            <Button 
-              type="submit" 
-              className="w-full mt-4 bg-primary text-primary-foreground hover:bg-muted transition-colors duration-200"
-              disabled={adding || !seasonNumber || episodeCount === null}
-            >
-              {adding ? "Adding..." : "Add TV Show"}
-            </Button>
           </form>
         )}
       </DialogContent>

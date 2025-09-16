@@ -1,7 +1,8 @@
-// src/components/core/MovieCard.tsx
 import { Movie } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { XCircle } from "lucide-react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 
 interface MovieCardProps {
@@ -14,41 +15,66 @@ export const MovieCard = ({ movie, onRemove, onShowDetails }: MovieCardProps) =>
   const posterUrl = movie.poster_path;
 
   return (
-    <Card className="relative bg-card border border-border rounded-lg p-4 transition-transform duration-300 hover:scale-[1.02] flex items-center justify-between">
-      <div 
-        className="flex items-center gap-4 flex-1 cursor-pointer" 
-        onClick={() => onShowDetails(movie)}
-      >
-        {posterUrl ? (
-          <Image
-            src={posterUrl}
-            alt={`${movie.title} poster`}
-            width={75}
-            height={112}
-            className="rounded-lg object-cover"
-          />
-        ) : (
-          <div className="flex h-[112px] w-[75px] items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-[10px] text-muted-foreground">
-            Poster Not Available
-          </div>
-        )}
-        <div className="flex-1">
-          <h3 className="text-lg font-light">{movie.title}</h3>
-          <p className="text-sm text-muted-foreground">{movie.year}</p>
-          {movie.genre && (
-            <p className="text-xs text-muted-foreground mt-1">{movie.genre}</p>
+    <Card className="glass-card hover-lift rounded-2xl p-6 group cursor-pointer border-border/50">
+      <div className="flex items-center gap-6">
+        <div 
+          className="flex-shrink-0"
+          onClick={() => onShowDetails(movie)}
+        >
+          {posterUrl ? (
+            <div className="relative overflow-hidden rounded-xl">
+              <Image
+                src={posterUrl}
+                alt={`${movie.title} poster`}
+                width={80}
+                height={120}
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
+          ) : (
+            <div className="flex h-[120px] w-[80px] items-center justify-center rounded-xl bg-muted/20 text-center text-xs text-muted-foreground">
+              No Poster
+            </div>
           )}
         </div>
+        
+        <div 
+          className="flex-1 min-w-0"
+          onClick={() => onShowDetails(movie)}
+        >
+          <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors duration-300 truncate">
+            {movie.title}
+          </h3>
+          <div className="flex items-center gap-3 mb-3">
+            <Badge variant="outline" className="text-xs">
+              {movie.year}
+            </Badge>
+            {movie.imdbRating && movie.imdbRating !== "N/A" && (
+              <div className="flex items-center gap-1">
+                <span className="text-yellow-400">⭐</span>
+                <span className="text-sm font-medium">{movie.imdbRating}</span>
+              </div>
+            )}
+          </div>
+          {movie.genre && (
+            <p className="text-sm text-muted-foreground truncate">
+              {movie.genre}
+            </p>
+          )}
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(movie._id);
+          }}
+          className="text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors duration-300 rounded-lg"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
-      <button 
-        onClick={(e) => {
-          e.stopPropagation();
-          onRemove(movie._id);
-        }} 
-        className="text-muted-foreground hover:text-foreground/80 transition-colors duration-200 ml-4"
-      >
-        <XCircle size={18} />
-      </button>
     </Card>
   );
 };

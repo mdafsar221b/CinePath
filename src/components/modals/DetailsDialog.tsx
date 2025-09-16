@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -23,46 +22,62 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border border-border text-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="glass-card border-border/50 text-foreground max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-light">{content.title}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+            {content.title}
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-shrink-0">
             {content.poster_path ? (
-              <Image
-                src={content.poster_path}
-                alt={`${content.title} poster`}
-                width={300}
-                height={450}
-                className="rounded-lg object-cover"
-              />
+              <div className="relative overflow-hidden rounded-2xl">
+                <Image
+                  src={content.poster_path}
+                  alt={`${content.title} poster`}
+                  width={320}
+                  height={480}
+                  className="object-cover"
+                />
+              </div>
             ) : (
-              <div className="flex h-[450px] w-[300px] items-center justify-center rounded-lg bg-muted-foreground/20 text-center text-sm text-muted-foreground">
-                Poster Not Available
+              <div className="flex h-[480px] w-[320px] items-center justify-center rounded-2xl bg-muted/20 text-center text-sm text-muted-foreground">
+                No Poster Available
               </div>
             )}
           </div>
           
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-4">
-              <Badge variant="outline">{content.year}</Badge>
-              <Badge variant="outline">{content.rating}</Badge>
-              <Badge variant="outline">{content.type === 'movie' ? 'Movie' : 'TV Show'}</Badge>
+          <div className="flex-1 space-y-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge className="bg-primary/20 text-primary border-primary/30 px-3 py-1">
+                {content.year}
+              </Badge>
+              <Badge className="bg-accent/20 text-accent border-accent/30 px-3 py-1">
+                {content.rating}
+              </Badge>
+              <Badge 
+                className={`px-3 py-1 ${
+                  content.type === 'movie' 
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                    : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                }`}
+              >
+                {content.type === 'movie' ? 'Movie' : 'TV Show'}
+              </Badge>
               {content.imdbRating !== "N/A" && (
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium">{content.imdbRating}</span>
+                <div className="flex items-center gap-2 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full px-3 py-1">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="font-medium">{content.imdbRating}</span>
                 </div>
               )}
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">Genre</h3>
+              <h3 className="text-lg font-semibold mb-3 text-primary">Genres</h3>
               <div className="flex flex-wrap gap-2">
                 {content.genre.split(', ').map((genre, index) => (
-                  <Badge key={index} className="bg-primary/10 text-primary border-primary/20">
+                  <Badge key={index} className="glass-card bg-muted/20 text-foreground border-muted/30 hover:bg-muted/30 transition-colors">
                     {genre}
                   </Badge>
                 ))}
@@ -70,19 +85,25 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">Plot</h3>
-              <p className="text-muted-foreground leading-relaxed">{content.plot}</p>
+              <h3 className="text-lg font-semibold mb-3 text-primary">Plot</h3>
+              <p className="text-muted-foreground leading-relaxed text-base">
+                {content.plot}
+              </p>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">Cast</h3>
-              <p className="text-muted-foreground">{content.actors}</p>
+              <h3 className="text-lg font-semibold mb-3 text-primary">Cast</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {content.actors}
+              </p>
             </div>
             
             {content.director && content.director !== "N/A" && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">Director</h3>
-                <p className="text-muted-foreground">{content.director}</p>
+                <h3 className="text-lg font-semibold mb-3 text-primary">Director</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {content.director}
+                </p>
               </div>
             )}
           </div>

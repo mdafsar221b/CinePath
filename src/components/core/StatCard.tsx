@@ -9,12 +9,16 @@ interface StatCardProps {
 
 export const StatCard = ({ title, value }: StatCardProps) => {
   return (
-    <Card className="bg-card border border-border rounded-lg p-4 transition-all duration-300 hover:scale-[1.02]">
-      <CardHeader className="p-0 pb-2">
-        <CardTitle className="text-sm font-light text-muted-foreground">{title}</CardTitle>
+    <Card className="glass-card hover-lift rounded-2xl p-6 group cursor-default">
+      <CardHeader className="p-0 pb-4">
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors duration-300">
+          {title}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 text-3xl font-bold tracking-tight">
-        {value}
+      <CardContent className="p-0">
+        <div className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-foreground to-primary bg-clip-text text-transparent">
+          {value}
+        </div>
       </CardContent>
     </Card>
   );
