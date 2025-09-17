@@ -17,7 +17,7 @@ import { Search, Plus } from "lucide-react";
 import Image from "next/image";
 
 interface AddTVShowDialogProps {
-  onAddTVShow: (title: string, poster_path: string | null, season: WatchedSeason) => void;
+  onAddTVShow: (title: string, poster_path: string | null, seasonsWatched: WatchedSeason[]) => void;
 }
 
 interface SearchResult {
@@ -66,7 +66,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     setAdding(true);
     try {
       let showDetails = null;
-      
+
       try {
         const detailsRes = await fetch(`/api/details?id=${selectedShow.id}&type=series`);
         if (detailsRes.ok) {
@@ -76,11 +76,11 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
       } catch (error) {
         console.log("Could not fetch details, using basic info");
       }
-      
+
       const body = {
         title: selectedShow.name,
         poster_path: selectedShow.poster_path,
-        seasonsWatched: [{ season: seasonNumber, episodes: episodeCount }],
+        seasonsWatched: [{ season: seasonNumber, watchedEpisodes: Array.from({ length: episodeCount }, (_, i) => i + 1) }],
         genre: showDetails?.genre || null,
         plot: showDetails?.plot || null,
         rating: showDetails?.rating || null,
@@ -89,7 +89,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
       };
 
       console.log("Adding TV Show with data:", body);
-      
+
       const response = await fetch("/api/tv-shows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,16 +102,16 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
 
       const result = await response.json();
       console.log("TV Show added successfully:", result);
-      
-      onAddTVShow(selectedShow.name, selectedShow.poster_path, { season: seasonNumber, episodes: episodeCount });
-      
+
+      onAddTVShow(selectedShow.name, selectedShow.poster_path, [{ season: seasonNumber, watchedEpisodes: Array.from({ length: episodeCount }, (_, i) => i + 1) }]);
+
       setOpen(false);
       setSearchTerm("");
       setResults([]);
       setSelectedShow(null);
       setSeasonNumber(null);
       setEpisodeCount(null);
-      
+
     } catch (error) {
       console.error("Error adding TV show:", error);
     } finally {
@@ -133,8 +133,8 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="px-6 py-3 glass-card border-primary/30 text-foreground rounded-xl font-medium hover:bg-primary/10 transition-all duration-300 hover:scale-105"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -227,7 +227,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
               )}
               <h3 className="text-lg font-semibold">{selectedShow.name}</h3>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="season" className="text-sm font-medium">
@@ -258,18 +258,18 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                 />
               </div>
             </div>
-            
+
             <div className="flex gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setSelectedShow(null)}
                 className="flex-1 glass-card rounded-xl"
               >
                 Back to Search
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="flex-1 rounded-xl"
                 disabled={adding || !seasonNumber || episodeCount === null}
               >

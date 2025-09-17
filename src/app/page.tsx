@@ -101,12 +101,12 @@ const HomePage = () => {
                     const bRatingAsc = parseFloat(b.imdbRating || "0");
                     return aRatingAsc - bRatingAsc;
                 case "year_desc":
-                    const aYearDesc = typeof (a as any).year === "number" ? (a as any).year : new Date(a.addedAt).getFullYear();
-                    const bYearDesc = typeof (b as any).year === "number" ? (b as any).year : new Date(b.addedAt).getFullYear();
+                    const aYearDesc = 'year' in a && typeof a.year === 'number' ? a.year : new Date(a.addedAt).getFullYear();
+                    const bYearDesc = 'year' in b && typeof b.year === 'number' ? b.year : new Date(b.addedAt).getFullYear();
                     return (bYearDesc ?? 0) - (aYearDesc ?? 0);
                 case "year_asc":
-                    const aYearAsc = typeof (a as any).year === "number" ? (a as any).year : new Date(a.addedAt).getFullYear();
-                    const bYearAsc = typeof (b as any).year === "number" ? (b as any).year : new Date(b.addedAt).getFullYear();
+                    const aYearAsc = 'year' in a && typeof a.year === 'number' ? a.year : new Date(a.addedAt).getFullYear();
+                    const bYearAsc = 'year' in b && typeof b.year === 'number' ? b.year : new Date(b.addedAt).getFullYear();
                     return (aYearAsc ?? 0) - (bYearAsc ?? 0);
                 default:
                     return 0;
@@ -157,8 +157,8 @@ const HomePage = () => {
         fetchMovies();
     };
 
-    const handleAddTVShow = async (title: string, poster_path: string | null, newSeason: WatchedSeason) => {
-        console.log("handleAddTVShow called with:", { title, poster_path, newSeason });
+    const handleAddTVShow = async (title: string, poster_path: string | null, seasonsWatched: WatchedSeason[]) => {
+        console.log("handleAddTVShow called with:", { title, poster_path, seasonsWatched });
         await fetchTVShows();
     };
 
@@ -189,7 +189,7 @@ const HomePage = () => {
         const detailedContent = {
             id: movie.id || movie._id,
             title: movie.title,
-            year: movie.year, // Using movie.year directly as it's a number
+            year: movie.year,
             poster_path: movie.poster_path || null,
             genre: movie.genre || "N/A",
             plot: movie.plot || "N/A",
@@ -197,7 +197,7 @@ const HomePage = () => {
             actors: movie.actors || "N/A",
             director: movie.director || "N/A",
             imdbRating: movie.imdbRating || "N/A",
-            type: 'movie' as 'movie', // Type assertion
+            type: 'movie' as 'movie',
             myRating: movie.myRating,
             personalNotes: movie.personalNotes,
         };
@@ -209,14 +209,14 @@ const HomePage = () => {
         const detailedContent = {
             id: show.id || show._id,
             title: show.title,
-            year: new Date(show.addedAt).getFullYear(), // Getting year as a number
+            year: new Date(show.addedAt).getFullYear(),
             poster_path: show.poster_path || null,
             genre: show.genre || "N/A",
             plot: show.plot || "N/A",
             rating: show.rating || "N/A",
             actors: show.actors || "N/A",
             imdbRating: show.imdbRating || "N/A",
-            type: 'tv' as 'tv', // Type assertion
+            type: 'tv' as 'tv',
             myRating: show.myRating,
             personalNotes: show.personalNotes,
             isFavorite: show.isFavorite,
@@ -229,7 +229,7 @@ const HomePage = () => {
         const detailedContent: DetailedContent = {
             id: item.id,
             title: item.title,
-            year: parseInt(item.year || "0") || 0, // Ensure year is a number
+            year: parseInt(item.year || "0") || 0,
             poster_path: item.poster_path || null,
             genre: item.genre || "N/A",
             plot: item.plot || "N/A",
@@ -273,7 +273,9 @@ const HomePage = () => {
     const moviesWatchedCount = movies.length;
     const tvShowsWatchedCount = tvShows.length;
     const seasonsWatchedCount = tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.length || 0), 0);
-    const episodesWatchedCount = tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.reduce((sum, season) => sum + (season.episodes || 0), 0) || 0), 0);
+    const episodesWatchedCount = tvShows
+      .flatMap(show => show.seasonsWatched ?? [])
+      .reduce((acc, season) => acc + (season.watchedEpisodes?.length || 0), 0);
 
     const moviesByYear = movies.reduce((acc, movie) => {
         const year = new Date(movie.addedAt).getFullYear().toString();

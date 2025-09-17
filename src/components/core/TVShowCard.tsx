@@ -13,7 +13,7 @@ interface TVShowCardProps {
 }
 
 export const TVShowCard = ({ show, onRemove, onShowDetails, onEdit }: TVShowCardProps) => {
-  const totalEpisodes = show.seasonsWatched.reduce((sum, season) => sum + season.episodes, 0);
+  const totalEpisodes = show.seasonsWatched.reduce((sum, season) => sum + (season.watchedEpisodes?.length || 0), 0);
   const totalSeasons = show.seasonsWatched.length;
   const posterUrl = show.poster_path;
 
@@ -64,7 +64,7 @@ export const TVShowCard = ({ show, onRemove, onShowDetails, onEdit }: TVShowCard
       
       <div className="p-4 flex flex-col items-center text-center">
         <h3 className="text-lg font-semibold mb-1 truncate w-full">{show.title}</h3>
-        <p className="text-sm text-muted-foreground mb-3">S01-S0{totalSeasons}/ {totalEpisodes} Episodes Watched</p>
+        <p className="text-sm text-muted-foreground mb-3">{totalSeasons} Seasons / {totalEpisodes} Episodes Watched</p>
         <div className="flex items-center gap-2">
             {show.imdbRating && show.imdbRating !== "N/A" && (
                 <Badge variant="outline" className="text-xs">

@@ -1,4 +1,4 @@
-// src/app/api/tv-shows/route.ts
+
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
@@ -25,15 +25,15 @@ export async function POST(request: NextRequest) {
 
         if (existingShow) {
             const newSeason = seasonsWatched[0];
-            const seasonExists = existingShow.seasonsWatched.some((s: any) => s.season === newSeason.season);
+            const seasonIndex = existingShow.seasonsWatched.findIndex((s: any) => s.season === newSeason.season);
 
-            if (seasonExists) {
-                // REPLACE, not add
-                const updatedSeasons = existingShow.seasonsWatched.map((s: any) =>
-                    s.season === newSeason.season
-                        ? { ...s, episodes: newSeason.episodes }
-                        : s
-                );
+            if (seasonIndex !== -1) {
+                // Update existing season's watched episodes
+                const updatedSeasons = [...existingShow.seasonsWatched];
+                updatedSeasons[seasonIndex] = {
+                    ...updatedSeasons[seasonIndex],
+                    watchedEpisodes: [...new Set([...updatedSeasons[seasonIndex].watchedEpisodes, ...newSeason.watchedEpisodes])]
+                };
                 await db.collection("tv_shows").updateOne(
                     { _id: existingShow._id },
                     { 
@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
                 rating,
                 actors,
                 imdbRating,
-                myRating, // new field
-                personalNotes, // new field
-                isFavorite, // new field
+                myRating,
+                personalNotes,
+                isFavorite,
                 addedAt: new Date() 
             });
             return NextResponse.json(result, { status: 201 });

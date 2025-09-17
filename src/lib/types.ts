@@ -36,7 +36,7 @@ export type Movie = {
 
 export type WatchedSeason = {
   season: number;
-  episodes: number;
+  watchedEpisodes: number[]|null;
 };
 
 export type TVShow = {
@@ -59,7 +59,7 @@ export type TVShow = {
 export type DetailedContent = {
   id: string;
   title: string;
-  year: number; 
+  year: number;
   poster_path: string | null;
   genre: string;
   plot: string;
