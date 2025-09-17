@@ -106,7 +106,7 @@ export const GlobalSearchDialog = ({ onSelectContent, onAddToWatchlist }: Global
           <Search className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-card border-border/50 text-foreground max-w-4xl rounded-2xl">
+      <DialogContent className="bg-card border-border/50 text-foreground max-w-4xl rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Discover Movies & TV Shows</DialogTitle>
         </DialogHeader>
@@ -116,7 +116,7 @@ export const GlobalSearchDialog = ({ onSelectContent, onAddToWatchlist }: Global
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search for movies and TV shows..."
-            className="flex-1 glass-card border-border/50 rounded-xl"
+            className="flex-1 rounded-xl"
           />
           <Button type="submit" size="icon" disabled={loading} className="rounded-xl">
             <Search className="w-4 h-4" />
@@ -134,7 +134,7 @@ export const GlobalSearchDialog = ({ onSelectContent, onAddToWatchlist }: Global
               {results.map((result) => (
                 <div
                   key={result.id}
-                  className="glass-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
+                  className="bg-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
                 >
                   {result.poster_path ? (
                     <div className="relative w-[60px] h-[90px] flex-shrink-0">

@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
 import { GlobalSearchDialog } from "@/components/modals/GlobalSearchDialog";
 import { DetailsDialog } from "@/components/modals/DetailsDialog";
 import { DetailedContent } from "@/lib/types";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface HeaderProps {
   onWatchlistUpdate?: () => void;
@@ -65,23 +64,11 @@ export const Header = ({ onWatchlistUpdate }: HeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 glass-card border-b border-border/50 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 bg-background/50 border-b border-border/50 backdrop-blur-xl">
         <div className="container mx-auto px-4 md:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2 group">
-              <motion.div
-                whileHover={{ rotate: 10, scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Image
-                  src="/icon.svg" 
-                  alt="CinePath Logo"
-                  width={32}
-                  height={32}
-                  priority
-                />
-              </motion.div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent transition-transform duration-300">
                 CinePath
               </span>
             </Link>
@@ -90,6 +77,7 @@ export const Header = ({ onWatchlistUpdate }: HeaderProps) => {
                 onSelectContent={handleSelectContent}
                 onAddToWatchlist={handleAddToWatchlist}
               />
+              <ThemeToggle />
             </div>
           </div>
         </div>

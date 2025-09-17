@@ -262,13 +262,12 @@ const HomePage = () => {
                     {watchlist.length > 0 && (
                         <section className="mb-16">
                             <h2 className="text-2xl md:text-3xl font-semibold mb-8 flex items-center gap-3">
-                                <span className="w-1 h-8 bg-gradient-to-b from-primary to-accent rounded-full"></span>
                                 Watchlist
                                 <Badge variant="outline" className="ml-2 text-xs">
                                     {watchlist.length}
                                 </Badge>
                             </h2>
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                 {watchlist.map((item) => (
                                     <WatchlistCard 
                                         key={item._id} 
@@ -285,7 +284,6 @@ const HomePage = () => {
                     <section className="mb-16">
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
                             <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-3">
-                                <span className="w-1 h-8 bg-gradient-to-b from-primary to-accent rounded-full"></span>
                                 Movies Watched
                             </h2>
                             <div className="flex items-center gap-4">
@@ -313,7 +311,7 @@ const HomePage = () => {
                                 )}
                             </div>
                         </div>
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {filteredMovies.length > 0 ? (
                                 filteredMovies.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((movie: any) => (
                                     <MovieCard 
@@ -324,11 +322,11 @@ const HomePage = () => {
                                     />
                                 ))
                             ) : movieGenreFilter !== "all" ? (
-                                <div className="text-center py-12 glass-card rounded-2xl">
+                                <div className="text-center py-12 col-span-full glass-card rounded-2xl">
                                     <p className="text-muted-foreground">No movies found for the selected genre.</p>
                                 </div>
                             ) : (
-                                <div className="text-center py-12 glass-card rounded-2xl">
+                                <div className="text-center py-12 col-span-full glass-card rounded-2xl">
                                     <p className="text-muted-foreground">No movies added yet. Add one to get started!</p>
                                 </div>
                             )}
@@ -338,7 +336,6 @@ const HomePage = () => {
                     <section className="mb-16">
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
                             <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-3">
-                                <span className="w-1 h-8 bg-gradient-to-b from-primary to-accent rounded-full"></span>
                                 TV Shows Watched
                             </h2>
                             <div className="flex items-center gap-4">
@@ -366,7 +363,7 @@ const HomePage = () => {
                                 )}
                             </div>
                         </div>
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {filteredTVShows.length > 0 ? (
                                 filteredTVShows.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((show: any) => (
                                     <TVShowCard 
@@ -390,7 +387,6 @@ const HomePage = () => {
 
                     <section className="mb-16">
                         <h2 className="text-2xl md:text-3xl font-semibold mb-8 flex items-center gap-3">
-                            <span className="w-1 h-8 bg-gradient-to-b from-primary to-accent rounded-full"></span>
                             Yearly Progress
                         </h2>
                         <div className="flex flex-wrap gap-3">
