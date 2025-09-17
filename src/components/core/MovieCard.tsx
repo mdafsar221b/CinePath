@@ -1,6 +1,6 @@
 import { Movie } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { X, Eye } from "lucide-react";
+import { X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
@@ -9,14 +9,18 @@ interface MovieCardProps {
   movie: Movie;
   onRemove: (_id: string) => void;
   onShowDetails: (movie: Movie) => void;
+  onEdit: (movie: Movie) => void;
 }
 
-export const MovieCard = ({ movie, onRemove, onShowDetails }: MovieCardProps) => {
+export const MovieCard = ({ movie, onRemove, onShowDetails, onEdit }: MovieCardProps) => {
   const posterUrl = movie.poster_path;
 
   return (
-    <Card className="hover-lift rounded-2xl group border-border/50 relative overflow-hidden bg-secondary/30">
-      <div className="relative  h-[300px] overflow-hidden rounded-t-2xl">
+    <Card 
+      className="hover-lift rounded-2xl group border-border/50 relative overflow-hidden bg-secondary/30 cursor-pointer"
+      onClick={() => onShowDetails(movie)}
+    >
+      <div className="relative w-full h-[300px] overflow-hidden rounded-t-2xl">
         {posterUrl ? (
           <Image
             src={posterUrl}
@@ -30,6 +34,30 @@ export const MovieCard = ({ movie, onRemove, onShowDetails }: MovieCardProps) =>
             No Poster
           </div>
         )}
+        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(movie);
+                }}
+                className="rounded-full bg-background/50 backdrop-blur-sm"
+            >
+                <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+                variant="destructive"
+                size="icon"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(movie._id);
+                }}
+                className="rounded-full bg-background/50 backdrop-blur-sm"
+            >
+                <X className="h-4 w-4" />
+            </Button>
+        </div>
       </div>
       
       <div className="p-4 flex flex-col items-center text-center">
@@ -41,25 +69,11 @@ export const MovieCard = ({ movie, onRemove, onShowDetails }: MovieCardProps) =>
                     ⭐ {movie.imdbRating}
                 </Badge>
             )}
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onShowDetails(movie)}
-                className="rounded-full"
-            >
-                <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-                variant="destructive"
-                size="sm"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove(movie._id);
-                }}
-                className="rounded-full"
-            >
-                <X className="h-4 w-4" />
-            </Button>
+            {movie.myRating && (
+                <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                    My Rating: {movie.myRating}
+                </Badge>
+            )}
         </div>
       </div>
     </Card>

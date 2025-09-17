@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { title, poster_path, seasonsWatched, genre, plot, rating, actors, imdbRating } = body;
+        const { title, poster_path, seasonsWatched, genre, plot, rating, actors, imdbRating, myRating, personalNotes, isFavorite } = body;
 
         const existingShow = await db.collection("tv_shows").findOne({ title: { $regex: new RegExp(`^${title}$`, 'i') } });
 
@@ -28,10 +28,10 @@ export async function POST(request: NextRequest) {
             const seasonExists = existingShow.seasonsWatched.some((s: any) => s.season === newSeason.season);
 
             if (seasonExists) {
-                
+                // REPLACE, not add
                 const updatedSeasons = existingShow.seasonsWatched.map((s: any) =>
                     s.season === newSeason.season
-                        ? { ...s, episodes: newSeason.episodes } // REPLACE, not add
+                        ? { ...s, episodes: newSeason.episodes }
                         : s
                 );
                 await db.collection("tv_shows").updateOne(
@@ -39,12 +39,14 @@ export async function POST(request: NextRequest) {
                     { 
                         $set: { 
                             seasonsWatched: updatedSeasons,
-                            // Update other fields if they exist in the new data
                             ...(genre && { genre }),
                             ...(plot && { plot }),
                             ...(rating && { rating }),
                             ...(actors && { actors }),
                             ...(imdbRating && { imdbRating }),
+                            ...(myRating && { myRating }),
+                            ...(personalNotes && { personalNotes }),
+                            isFavorite: isFavorite !== undefined ? isFavorite : existingShow.isFavorite,
                         }
                     }
                 );
@@ -55,12 +57,14 @@ export async function POST(request: NextRequest) {
                     { 
                         $push: { seasonsWatched: newSeason },
                         $set: {
-                            // Update other fields if they exist
                             ...(genre && { genre }),
                             ...(plot && { plot }),
                             ...(rating && { rating }),
                             ...(actors && { actors }),
                             ...(imdbRating && { imdbRating }),
+                            ...(myRating && { myRating }),
+                            ...(personalNotes && { personalNotes }),
+                            isFavorite: isFavorite !== undefined ? isFavorite : existingShow.isFavorite,
                         }
                     }
                 );
@@ -77,6 +81,9 @@ export async function POST(request: NextRequest) {
                 rating,
                 actors,
                 imdbRating,
+                myRating, // new field
+                personalNotes, // new field
+                isFavorite, // new field
                 addedAt: new Date() 
             });
             return NextResponse.json(result, { status: 201 });
@@ -84,6 +91,34 @@ export async function POST(request: NextRequest) {
     } catch (e) {
         console.error("TV Show API error:", e);
         return NextResponse.json({ error: "Failed to add/update TV show" }, { status: 500 });
+    }
+}
+
+export async function PUT(request: NextRequest) {
+    try {
+        const client = await clientPromise;
+        const db = client.db("cinepath");
+        const body = await request.json();
+        const { _id, myRating, personalNotes, isFavorite } = body;
+
+        if (!_id) {
+            return NextResponse.json({ error: "ID is required to update" }, { status: 400 });
+        }
+
+        const result = await db.collection("tv_shows").updateOne(
+            { _id: new ObjectId(_id) },
+            {
+                $set: {
+                    myRating,
+                    personalNotes,
+                    isFavorite
+                }
+            }
+        );
+        return NextResponse.json(result);
+    } catch (e) {
+        console.error("Failed to update TV show:", e);
+        return NextResponse.json({ error: "Failed to update TV show" }, { status: 500 });
     }
 }
 

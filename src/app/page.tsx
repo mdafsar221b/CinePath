@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
+import { EditMovieDialog } from "@/components/modals/EditMovieDialog";
+import { EditTVShowDialog } from "@/components/modals/EditTVShowDialog";
 
 const HomePage = () => {
     const [movies, setMovies] = useState<Movie[]>([]);
@@ -26,7 +28,11 @@ const HomePage = () => {
     const [movieSort, setMovieSort] = useState<SortOption>("addedAt_desc");
     const [tvShowSort, setTvShowSort] = useState<SortOption>("addedAt_desc");
     const [detailsOpen, setDetailsOpen] = useState(false);
-    const [selectedContent, setSelectedContent] = useState<DetailedContent | null>(null);
+    const [editMovieOpen, setEditMovieOpen] = useState(false);
+    const [editTVShowOpen, setEditTVShowOpen] = useState(false);
+    const [selectedContent, setSelectedContent] = useState<(DetailedContent & Partial<Movie> & Partial<TVShow>) | null>(null);
+    const [movieToEdit, setMovieToEdit] = useState<Movie | null>(null);
+    const [tvShowToEdit, setTvShowToEdit] = useState<TVShow | null>(null);
 
     const fetchMovies = async () => {
         try {
@@ -36,7 +42,6 @@ const HomePage = () => {
             }
             const data = await res.json();
             setMovies(data);
-            setFilteredMovies(data);
         } catch (e) {
             console.error("Error fetching movies:", e);
         }
@@ -50,7 +55,6 @@ const HomePage = () => {
             }
             const data = await res.json();
             setTVShows(data);
-            setFilteredTVShows(data);
         } catch (e) {
             console.error("Error fetching TV shows:", e);
         }
@@ -97,13 +101,13 @@ const HomePage = () => {
                     const bRatingAsc = parseFloat(b.imdbRating || "0");
                     return aRatingAsc - bRatingAsc;
                 case "year_desc":
-                    const aYearDesc = 'year' in a && typeof a.year === "number" ? a.year : new Date(a.addedAt).getFullYear();
-                    const bYearDesc = 'year' in b && typeof b.year === "number" ? b.year : new Date(b.addedAt).getFullYear();
-                    return Number(bYearDesc ?? 0) - Number(aYearDesc ?? 0);
+                    const aYearDesc = typeof (a as any).year === "number" ? (a as any).year : new Date(a.addedAt).getFullYear();
+                    const bYearDesc = typeof (b as any).year === "number" ? (b as any).year : new Date(b.addedAt).getFullYear();
+                    return (bYearDesc ?? 0) - (aYearDesc ?? 0);
                 case "year_asc":
-                    const aYearAsc = 'year' in a && typeof a.year === "number" ? a.year : new Date(a.addedAt).getFullYear();
-                    const bYearAsc = 'year' in b && typeof b.year === "number" ? b.year : new Date(b.addedAt).getFullYear();
-                    return Number(aYearAsc ?? 0) - Number(bYearAsc ?? 0);
+                    const aYearAsc = typeof (a as any).year === "number" ? (a as any).year : new Date(a.addedAt).getFullYear();
+                    const bYearAsc = typeof (b as any).year === "number" ? (b as any).year : new Date(b.addedAt).getFullYear();
+                    return (aYearAsc ?? 0) - (bYearAsc ?? 0);
                 default:
                     return 0;
             }
@@ -144,6 +148,15 @@ const HomePage = () => {
         fetchMovies();
     };
 
+    const handleEditMovie = (movie: Movie) => {
+        setMovieToEdit(movie);
+        setEditMovieOpen(true);
+    };
+
+    const handleUpdateMovie = async () => {
+        fetchMovies();
+    };
+
     const handleAddTVShow = async (title: string, poster_path: string | null, newSeason: WatchedSeason) => {
         console.log("handleAddTVShow called with:", { title, poster_path, newSeason });
         await fetchTVShows();
@@ -151,6 +164,15 @@ const HomePage = () => {
 
     const handleRemoveTVShow = async (_id: string) => {
         await fetch(`/api/tv-shows?id=${_id}`, { method: "DELETE" });
+        fetchTVShows();
+    };
+
+    const handleEditTVShow = (show: TVShow) => {
+      setTvShowToEdit(show);
+      setEditTVShowOpen(true);
+    };
+
+    const handleUpdateTVShow = async () => {
         fetchTVShows();
     };
 
@@ -164,49 +186,50 @@ const HomePage = () => {
     };
 
     const handleShowMovieDetails = async (movie: Movie) => {
-        if (movie.genre && movie.plot) {
-            const detailedContent: DetailedContent = {
-                id: movie.id || movie._id,
-                title: movie.title,
-                year: movie.year.toString(),
-                poster_path: movie.poster_path || null,
-                genre: movie.genre,
-                plot: movie.plot,
-                rating: movie.rating || "N/A",
-                actors: movie.actors || "N/A",
-                director: movie.director || "N/A",
-                imdbRating: movie.imdbRating || "N/A",
-                type: 'movie'
-            };
-            setSelectedContent(detailedContent);
-            setDetailsOpen(true);
-        }
+        const detailedContent = {
+            id: movie.id || movie._id,
+            title: movie.title,
+            year: movie.year, // Using movie.year directly as it's a number
+            poster_path: movie.poster_path || null,
+            genre: movie.genre || "N/A",
+            plot: movie.plot || "N/A",
+            rating: movie.rating || "N/A",
+            actors: movie.actors || "N/A",
+            director: movie.director || "N/A",
+            imdbRating: movie.imdbRating || "N/A",
+            type: 'movie' as 'movie', // Type assertion
+            myRating: movie.myRating,
+            personalNotes: movie.personalNotes,
+        };
+        setSelectedContent(detailedContent);
+        setDetailsOpen(true);
     };
 
     const handleShowTVDetails = async (show: TVShow) => {
-        if (show.genre && show.plot) {
-            const detailedContent: DetailedContent = {
-                id: show.id || show._id,
-                title: show.title,
-                year: new Date(show.addedAt).getFullYear().toString(),
-                poster_path: show.poster_path || null,
-                genre: show.genre,
-                plot: show.plot,
-                rating: show.rating || "N/A",
-                actors: show.actors || "N/A",
-                imdbRating: show.imdbRating || "N/A",
-                type: 'tv'
-            };
-            setSelectedContent(detailedContent);
-            setDetailsOpen(true);
-        }
+        const detailedContent = {
+            id: show.id || show._id,
+            title: show.title,
+            year: new Date(show.addedAt).getFullYear(), // Getting year as a number
+            poster_path: show.poster_path || null,
+            genre: show.genre || "N/A",
+            plot: show.plot || "N/A",
+            rating: show.rating || "N/A",
+            actors: show.actors || "N/A",
+            imdbRating: show.imdbRating || "N/A",
+            type: 'tv' as 'tv', // Type assertion
+            myRating: show.myRating,
+            personalNotes: show.personalNotes,
+            isFavorite: show.isFavorite,
+        };
+        setSelectedContent(detailedContent);
+        setDetailsOpen(true);
     };
 
     const handleShowWatchlistDetails = async (item: WatchlistItem) => {
         const detailedContent: DetailedContent = {
             id: item.id,
             title: item.title,
-            year: item.year || "Unknown",
+            year: parseInt(item.year || "0") || 0, // Ensure year is a number
             poster_path: item.poster_path || null,
             genre: item.genre || "N/A",
             plot: item.plot || "N/A",
@@ -356,6 +379,7 @@ const HomePage = () => {
                                         movie={movie as Movie}
                                         onRemove={handleRemoveMovie}
                                         onShowDetails={handleShowMovieDetails}
+                                        onEdit={handleEditMovie}
                                     />
                                 ))
                             ) : movieGenreFilter !== "all" ? (
@@ -409,14 +433,15 @@ const HomePage = () => {
                                         show={show as TVShow}
                                         onRemove={handleRemoveTVShow}
                                         onShowDetails={handleShowTVDetails}
+                                        onEdit={handleEditTVShow}
                                     />
                                 ))
                             ) : tvGenreFilter !== "all" ? (
-                                <div className="text-center py-12 glass-card rounded-2xl">
+                                <div className="text-center py-12 col-span-full glass-card rounded-2xl">
                                     <p className="text-muted-foreground">No TV shows found for the selected genre.</p>
                                 </div>
                             ) : (
-                                <div className="text-center py-12 glass-card rounded-2xl">
+                                <div className="text-center py-12 col-span-full glass-card rounded-2xl">
                                     <p className="text-muted-foreground">No TV shows added yet. Add one to get started!</p>
                                 </div>
                             )}
@@ -444,6 +469,18 @@ const HomePage = () => {
                     open={detailsOpen}
                     onOpenChange={setDetailsOpen}
                     content={selectedContent}
+                />
+                <EditMovieDialog
+                    open={editMovieOpen}
+                    onOpenChange={setEditMovieOpen}
+                    movie={movieToEdit}
+                    onEditMovie={handleUpdateMovie}
+                />
+                <EditTVShowDialog
+                    open={editTVShowOpen}
+                    onOpenChange={setEditTVShowOpen}
+                    show={tvShowToEdit}
+                    onEditTVShow={handleUpdateTVShow}
                 />
             </main>
         </>

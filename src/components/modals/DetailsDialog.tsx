@@ -6,15 +6,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DetailedContent } from "@/lib/types";
+import { DetailedContent, Movie, TVShow } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
+import { Star, Heart } from "lucide-react";
 import Image from "next/image";
 
 interface DetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  content: DetailedContent | null;
+  content: (DetailedContent & Partial<Movie> & Partial<TVShow>) | null;
 }
 
 export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProps) => {
@@ -28,7 +28,7 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
             {content.title}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-shrink-0">
             {content.poster_path ? (
@@ -47,19 +47,16 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
               </div>
             )}
           </div>
-          
+
           <div className="flex-1 space-y-6">
             <div className="flex flex-wrap items-center gap-3">
               <Badge className="bg-primary/20 text-primary border-primary/30 px-3 py-1">
                 {content.year}
               </Badge>
-              <Badge className="bg-accent/20 text-accent border-accent/30 px-3 py-1">
-                {content.rating}
-              </Badge>
-              <Badge 
+              <Badge
                 className={`px-3 py-1 ${
-                  content.type === 'movie' 
-                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                  content.type === 'movie'
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                     : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                 }`}
               >
@@ -71,38 +68,64 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
                   <span className="font-medium">{content.imdbRating}</span>
                 </div>
               )}
+              {content.myRating && (
+                <div className="flex items-center gap-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full px-3 py-1">
+                  <span className="font-medium">My Rating: {content.myRating}/10</span>
+                </div>
+              )}
+              {content.isFavorite && (
+                <div className="flex items-center gap-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full px-3 py-1">
+                  <Heart className="w-4 h-4 fill-current" />
+                  <span className="font-medium">Favorite</span>
+                </div>
+              )}
             </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-3 text-primary">Genres</h3>
-              <div className="flex flex-wrap gap-2">
-                {content.genre.split(', ').map((genre, index) => (
-                  <Badge key={index} className="glass-card bg-muted/20 text-foreground border-muted/30 hover:bg-muted/30 transition-colors">
-                    {genre}
-                  </Badge>
-                ))}
+
+            {content.genre && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">Genres</h3>
+                <div className="flex flex-wrap gap-2">
+                  {content.genre.split(', ').map((genre, index) => (
+                    <Badge key={index} className="glass-card bg-muted/20 text-foreground border-muted/30 hover:bg-muted/30 transition-colors">
+                      {genre}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-3 text-primary">Plot</h3>
-              <p className="text-muted-foreground leading-relaxed text-base">
-                {content.plot}
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-3 text-primary">Cast</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {content.actors}
-              </p>
-            </div>
-            
+            )}
+
+            {content.plot && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">Plot</h3>
+                <p className="text-muted-foreground leading-relaxed text-base">
+                  {content.plot}
+                </p>
+              </div>
+            )}
+
+            {content.actors && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">Cast</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {content.actors}
+                </p>
+              </div>
+            )}
+
             {content.director && content.director !== "N/A" && (
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-primary">Director</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   {content.director}
+                </p>
+              </div>
+            )}
+
+            {content.personalNotes && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">My Notes</h3>
+                <p className="text-muted-foreground leading-relaxed text-base italic">
+                  {content.personalNotes}
                 </p>
               </div>
             )}
