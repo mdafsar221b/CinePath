@@ -80,3 +80,12 @@ export type WatchlistItem = {
   imdbRating?: string;
   addedAt: Date;
 };
+export type SortOption = 
+  | "addedAt_desc" 
+  | "addedAt_asc" 
+  | "title_asc" 
+  | "title_desc" 
+  | "imdbRating_desc" 
+  | "imdbRating_asc" 
+  | "year_desc" 
+  | "year_asc";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem } from "@/lib/types";
+import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption } from "@/lib/types";
 import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
 import { StatCard } from "@/components/core/StatCard";
 import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
@@ -13,6 +13,7 @@ import { Header } from "@/components/layout/Header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SortSelector } from "@/components/ui/sort-selector";
 
 const HomePage = () => {
     const [movies, setMovies] = useState<Movie[]>([]);
@@ -22,6 +23,8 @@ const HomePage = () => {
     const [filteredTVShows, setFilteredTVShows] = useState<TVShow[]>([]);
     const [movieGenreFilter, setMovieGenreFilter] = useState<string>("all");
     const [tvGenreFilter, setTvGenreFilter] = useState<string>("all");
+    const [movieSort, setMovieSort] = useState<SortOption>("addedAt_desc");
+    const [tvShowSort, setTvShowSort] = useState<SortOption>("addedAt_desc");
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedContent, setSelectedContent] = useState<DetailedContent | null>(null);
 
@@ -74,25 +77,58 @@ const HomePage = () => {
         fetchWatchlist();
     }, []);
 
-    useEffect(() => {
-        if (movieGenreFilter === "all") {
-            setFilteredMovies(movies);
-        } else {
-            setFilteredMovies(movies.filter(movie => 
-                movie.genre && movie.genre.toLowerCase().includes(movieGenreFilter.toLowerCase())
-            ));
-        }
-    }, [movies, movieGenreFilter]);
+    const sortContent = <T extends Movie | TVShow | WatchlistItem>(content: T[], sortOption: SortOption): T[] => {
+        return [...content].sort((a, b) => {
+            switch (sortOption) {
+                case "addedAt_desc":
+                    return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
+                case "addedAt_asc":
+                    return new Date(a.addedAt).getTime() - new Date(b.addedAt).getTime();
+                case "title_asc":
+                    return a.title.localeCompare(b.title);
+                case "title_desc":
+                    return b.title.localeCompare(a.title);
+                case "imdbRating_desc":
+                    const aRatingDesc = parseFloat(a.imdbRating || "0");
+                    const bRatingDesc = parseFloat(b.imdbRating || "0");
+                    return bRatingDesc - aRatingDesc;
+                case "imdbRating_asc":
+                    const aRatingAsc = parseFloat(a.imdbRating || "0");
+                    const bRatingAsc = parseFloat(b.imdbRating || "0");
+                    return aRatingAsc - bRatingAsc;
+                case "year_desc":
+                    const aYearDesc = 'year' in a && typeof a.year === "number" ? a.year : new Date(a.addedAt).getFullYear();
+                    const bYearDesc = 'year' in b && typeof b.year === "number" ? b.year : new Date(b.addedAt).getFullYear();
+                    return Number(bYearDesc ?? 0) - Number(aYearDesc ?? 0);
+                case "year_asc":
+                    const aYearAsc = 'year' in a && typeof a.year === "number" ? a.year : new Date(a.addedAt).getFullYear();
+                    const bYearAsc = 'year' in b && typeof b.year === "number" ? b.year : new Date(b.addedAt).getFullYear();
+                    return Number(aYearAsc ?? 0) - Number(bYearAsc ?? 0);
+                default:
+                    return 0;
+            }
+        });
+    };
 
     useEffect(() => {
-        if (tvGenreFilter === "all") {
-            setFilteredTVShows(tvShows);
-        } else {
-            setFilteredTVShows(tvShows.filter(show => 
+        let newFilteredMovies = movieGenreFilter === "all"
+            ? movies
+            : movies.filter(movie =>
+                movie.genre && movie.genre.toLowerCase().includes(movieGenreFilter.toLowerCase())
+            );
+
+        setFilteredMovies(sortContent(newFilteredMovies, movieSort));
+    }, [movies, movieGenreFilter, movieSort]);
+
+    useEffect(() => {
+        let newFilteredTVShows = tvGenreFilter === "all"
+            ? tvShows
+            : tvShows.filter(show =>
                 show.genre && show.genre.toLowerCase().includes(tvGenreFilter.toLowerCase())
-            ));
-        }
-    }, [tvShows, tvGenreFilter]);
+            );
+
+        setFilteredTVShows(sortContent(newFilteredTVShows, tvShowSort));
+    }, [tvShows, tvGenreFilter, tvShowSort]);
 
     const handleAddMovie = async (newMovie: NewMovie) => {
         await fetch("/api/movies", {
@@ -206,7 +242,7 @@ const HomePage = () => {
         } else {
             alert("TV show functionality: Please add this manually for now by selecting season and episodes.");
         }
-        
+
         await fetch(`/api/watchlist?id=${item._id}`, { method: "DELETE" });
         fetchWatchlist();
     };
@@ -223,13 +259,13 @@ const HomePage = () => {
     }, {} as Record<string, number>);
 
     const movieGenres = Array.from(new Set(
-        movies.flatMap(movie => 
+        movies.flatMap(movie =>
             movie.genre ? movie.genre.split(', ').map(g => g.trim()) : []
         )
     )).sort();
 
     const tvGenres = Array.from(new Set(
-        tvShows.flatMap(show => 
+        tvShows.flatMap(show =>
             show.genre ? show.genre.split(', ').map(g => g.trim()) : []
         )
     )).sort();
@@ -269,9 +305,9 @@ const HomePage = () => {
                             </h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                 {watchlist.map((item) => (
-                                    <WatchlistCard 
-                                        key={item._id} 
-                                        item={item} 
+                                    <WatchlistCard
+                                        key={item._id}
+                                        item={item}
                                         onRemove={handleRemoveFromWatchlist}
                                         onShowDetails={handleShowWatchlistDetails}
                                         onMarkWatched={handleMarkWatched}
@@ -300,23 +336,24 @@ const HomePage = () => {
                                     </SelectContent>
                                 </Select>
                                 {movieGenreFilter !== "all" && (
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
                                         onClick={() => setMovieGenreFilter("all")}
                                         className="glass-card"
                                     >
                                         Clear
                                     </Button>
                                 )}
+                                <SortSelector value={movieSort} onValueChange={setMovieSort} />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {filteredMovies.length > 0 ? (
-                                filteredMovies.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((movie: any) => (
-                                    <MovieCard 
-                                        key={movie._id.toString()} 
-                                        movie={movie as Movie} 
+                                filteredMovies.map((movie) => (
+                                    <MovieCard
+                                        key={movie._id.toString()}
+                                        movie={movie as Movie}
                                         onRemove={handleRemoveMovie}
                                         onShowDetails={handleShowMovieDetails}
                                     />
@@ -352,23 +389,24 @@ const HomePage = () => {
                                     </SelectContent>
                                 </Select>
                                 {tvGenreFilter !== "all" && (
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
                                         onClick={() => setTvGenreFilter("all")}
                                         className="glass-card"
                                     >
                                         Clear
                                     </Button>
                                 )}
+                                <SortSelector value={tvShowSort} onValueChange={setTvShowSort} />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {filteredTVShows.length > 0 ? (
-                                filteredTVShows.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()).map((show: any) => (
-                                    <TVShowCard 
-                                        key={show._id.toString()} 
-                                        show={show as TVShow} 
+                                filteredTVShows.map((show) => (
+                                    <TVShowCard
+                                        key={show._id.toString()}
+                                        show={show as TVShow}
                                         onRemove={handleRemoveTVShow}
                                         onShowDetails={handleShowTVDetails}
                                     />
@@ -391,8 +429,8 @@ const HomePage = () => {
                         </h2>
                         <div className="flex flex-wrap gap-3">
                             {Object.entries(moviesByYear).sort(([yearA], [yearB]) => Number(yearB) - Number(yearA)).map(([year, count]) => (
-                                <Badge 
-                                    key={year} 
+                                <Badge
+                                    key={year}
                                     className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors px-6 py-2 text-sm font-medium cursor-default"
                                 >
                                     {year}: {count}
@@ -402,10 +440,10 @@ const HomePage = () => {
                     </section>
                 </div>
 
-                <DetailsDialog 
-                    open={detailsOpen} 
-                    onOpenChange={setDetailsOpen} 
-                    content={selectedContent} 
+                <DetailsDialog
+                    open={detailsOpen}
+                    onOpenChange={setDetailsOpen}
+                    content={selectedContent}
                 />
             </main>
         </>
