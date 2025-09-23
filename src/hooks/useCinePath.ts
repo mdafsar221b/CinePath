@@ -1,3 +1,4 @@
+"use client";
 
 import { useEffect, useState } from "react";
 import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption } from "@/lib/types";
@@ -219,6 +220,45 @@ export const useCinePath = () => {
         return acc;
     }, {} as Record<string, number>);
 
+    // New functions moved from page.tsx
+    const handleSelectContent = async (result: any) => {
+        try {
+          const res = await fetch(`/api/details?id=${result.id}&type=${result.type === "tv" ? "series" : "movie"}`);
+          if (!res.ok) throw new Error("Failed to fetch details");
+          const details = await res.json();
+          setDetailsOpen(true);
+          setSelectedContent(details);
+        } catch (error) {
+          console.error("Error fetching details:", error);
+        }
+    };
+
+    const handleAddToWatchlist = async (item: any) => {
+        try {
+            console.log("Adding to watchlist:", item);
+            const res = await fetch("/api/watchlist", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(item),
+            });
+            const responseData = await res.json();
+            console.log("Watchlist API response:", responseData);
+            if (res.status === 409) {
+                alert(responseData.error);
+                return;
+            }
+            if (!res.ok) {
+                console.error("Failed to add to watchlist:", responseData);
+                throw new Error("Failed to add to watchlist");
+            }
+            alert(`${item.title} added to watchlist!`);
+            fetchWatchlist();
+        } catch (error) {
+            console.error("Error adding to watchlist:", error);
+            alert("Failed to add to watchlist");
+        }
+    };
+
     return {
         movies,
         tvShows,
@@ -258,6 +298,8 @@ export const useCinePath = () => {
         handleShowTVDetails,
         handleShowWatchlistDetails,
         handleMarkWatched,
-        fetchWatchlist
+        fetchWatchlist,
+        handleSelectContent,
+        handleAddToWatchlist
     };
 };

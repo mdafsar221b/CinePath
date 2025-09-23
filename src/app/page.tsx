@@ -10,8 +10,8 @@ import { WatchlistSection } from "@/components/sections/WatchlistSection";
 import { MovieSection } from "@/components/sections/MovieSection";
 import { TVShowSection } from "@/components/sections/TVShowSection";
 import { YearlyProgressSection } from "@/components/sections/YearlyProgressSection";
-import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
-import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
+import { HeroSection } from "@/components/sections/HeroSection";
+import { useState } from "react";
 
 const HomePage = () => {
     const {
@@ -54,60 +54,95 @@ const HomePage = () => {
         handleShowWatchlistDetails,
         handleMarkWatched,
         fetchWatchlist,
+        handleSelectContent,
+        handleAddToWatchlist,
     } = useCinePath();
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchResults, setSearchResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [addingToWatchlist, setAddingToWatchlist] = useState<string | null>(null);
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchTerm.trim()) return;
+    
+        setLoading(true);
+        try {
+          const res = await fetch(`/api/search/all?query=${encodeURIComponent(searchTerm)}`);
+          if (!res.ok) throw new Error("Failed to search");
+          
+          const data = await res.json();
+          setSearchResults(data.all || []);
+        } catch (error) {
+          console.error("Search error:", error);
+          setSearchResults([]);
+        } finally {
+          setLoading(false);
+        }
+    };
+    
+    const handleAddToWatchlistAndFeedback = async (item: any) => {
+        setAddingToWatchlist(item.id);
+        await handleAddToWatchlist(item);
+        setAddingToWatchlist(null);
+    };
 
     return (
         <>
-            <Header onWatchlistUpdate={fetchWatchlist} />
-            <main className="container mx-auto px-4 md:px-8 min-h-screen">
-                <div className="smooth-fade">
-                    <section className="text-center py-16">
-                        <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight">
-                            Your Personal Cinema Journey
-                        </h1>
-                        <p className="text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed">
-                            Track movies, discover shows, and curate your perfect watchlist
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <AddMovieDialog onAddMovie={handleAddMovie} />
-                            <AddTVShowDialog onAddTVShow={handleAddTVShow} />
-                        </div>
-                    </section>
-                    <StatsSection
-                        moviesWatchedCount={movies.length}
-                        tvShowsWatchedCount={tvShows.length}
-                        seasonsWatchedCount={tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.length || 0), 0)}
-                        episodesWatchedCount={tvShows.flatMap(show => show.seasonsWatched ?? []).reduce((acc, season) => acc + (season.watchedEpisodes?.length || 0), 0)}
-                    />
-                    <WatchlistSection
-                        watchlist={watchlist}
-                        onRemove={handleRemoveFromWatchlist}
-                        onShowDetails={handleShowWatchlistDetails}
-                        onMarkWatched={handleMarkWatched}
-                    />
-                    <MovieSection
-                        filteredMovies={filteredMovies}
-                        movieGenres={movieGenres}
-                        movieGenreFilter={movieGenreFilter}
-                        movieSort={movieSort}
-                        onSetMovieGenreFilter={setMovieGenreFilter}
-                        onSetMovieSort={setMovieSort}
-                        onRemove={handleRemoveMovie}
-                        onShowDetails={handleShowMovieDetails}
-                        onEdit={handleEditMovie}
-                    />
-                    <TVShowSection
-                        filteredTVShows={filteredTVShows}
-                        tvGenres={tvGenres}
-                        tvGenreFilter={tvGenreFilter}
-                        tvShowSort={tvShowSort}
-                        onSetTvGenreFilter={setTvGenreFilter}
-                        onSetTvShowSort={setTvShowSort}
-                        onRemove={handleRemoveTVShow}
-                        onShowDetails={handleShowTVDetails}
-                        onEdit={handleEditTVShow}
-                    />
-                    <YearlyProgressSection moviesByYear={moviesByYear} />
+            <Header />
+            <main className="min-h-screen landing-background">
+                <HeroSection
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    searchResults={searchResults}
+                    loading={loading}
+                    addingToWatchlist={addingToWatchlist}
+                    onSearchSubmit={handleSearch}
+                    onAddMovie={handleAddMovie}
+                    onAddTVShow={handleAddTVShow}
+                    onSelectContent={handleSelectContent}
+                    onAddToWatchlist={handleAddToWatchlistAndFeedback}
+                />
+
+                <div className="container mx-auto px-4 md:px-8">
+                    <hr className="my-16 h-px border-0 bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <div className="smooth-fade">
+                        <StatsSection
+                            moviesWatchedCount={movies.length}
+                            tvShowsWatchedCount={tvShows.length}
+                            seasonsWatchedCount={tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.length || 0), 0)}
+                            episodesWatchedCount={tvShows.flatMap(show => show.seasonsWatched ?? []).reduce((acc, season) => acc + (season.watchedEpisodes?.length || 0), 0)}
+                        />
+                        <WatchlistSection
+                            watchlist={watchlist}
+                            onRemove={handleRemoveFromWatchlist}
+                            onShowDetails={handleShowWatchlistDetails}
+                            onMarkWatched={handleMarkWatched}
+                        />
+                        <MovieSection
+                            filteredMovies={filteredMovies}
+                            movieGenres={movieGenres}
+                            movieGenreFilter={movieGenreFilter}
+                            movieSort={movieSort}
+                            onSetMovieGenreFilter={setMovieGenreFilter}
+                            onSetMovieSort={setMovieSort}
+                            onRemove={handleRemoveMovie}
+                            onShowDetails={handleShowMovieDetails}
+                            onEdit={handleEditMovie}
+                        />
+                        <TVShowSection
+                            filteredTVShows={filteredTVShows}
+                            tvGenres={tvGenres}
+                            tvGenreFilter={tvGenreFilter}
+                            tvShowSort={tvShowSort}
+                            onSetTvGenreFilter={setTvGenreFilter}
+                            onSetTvShowSort={setTvShowSort}
+                            onRemove={handleRemoveTVShow}
+                            onShowDetails={handleShowTVDetails}
+                            onEdit={handleEditTVShow}
+                        />
+                        <YearlyProgressSection moviesByYear={moviesByYear} />
+                    </div>
                 </div>
                 <DetailsDialog
                     open={detailsOpen}
