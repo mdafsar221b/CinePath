@@ -1,4 +1,4 @@
-// src/components/auth/LoginDialog.tsx (NEW)
+
 "use client";
 
 import { useState } from "react";

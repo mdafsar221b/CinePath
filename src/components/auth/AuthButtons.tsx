@@ -1,4 +1,4 @@
-// src/components/auth/AuthButtons.tsx (NEW)
+
 "use client";
 
 import { useSession, signOut } from "next-auth/react";

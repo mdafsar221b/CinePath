@@ -1,3 +1,4 @@
+// mdafsar221b/cinepath/CinePath-cc8f03eae8d531fe279a40829543036f5e3573cd/src/components/sections/HeroSection.tsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -35,6 +36,8 @@ interface HeroSectionProps {
   onAddTVShow: (title: string, poster_path: string | null, seasonsWatched: any[]) => void;
   onSelectContent: (result: SearchResult) => void;
   onAddToWatchlist: (item: SearchResult) => Promise<void>;
+  isLoggedIn: boolean; 
+  loginPrompt: React.ReactNode; // ADDED
 }
 
 export const HeroSection = ({
@@ -48,6 +51,8 @@ export const HeroSection = ({
   onAddTVShow,
   onSelectContent,
   onAddToWatchlist,
+  isLoggedIn, 
+  loginPrompt, // ADDED
 }: HeroSectionProps) => {
 
   const handleClearResults = () => {
@@ -88,82 +93,88 @@ export const HeroSection = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
       >
-        <SearchInput
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onSearchSubmit={onSearchSubmit}
-            onClear={handleClearResults}
-            loading={loading}
-        />
-        {searchResults.length > 0 && (
-          <div className="mt-6 glass-card rounded-2xl p-6 max-h-[500px] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Search Results</h3>
-            <div className="space-y-4">
-              {searchResults.map((result) => (
-                <div
-                  key={result.id}
-                  className="bg-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
-                >
-                  {result.poster_path ? (
-                    <div className="relative w-[60px] h-[90px] flex-shrink-0">
-                      <Image
-                        src={result.poster_path}
-                        alt={`${result.title} poster`}
-                        fill
-                        className="rounded-lg object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[60px] h-[90px] flex-shrink-0">
-                      No Poster
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-lg truncate mb-2">{result.title}</h4>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs">
-                        {result.year}
-                      </Badge>
-                      <Badge 
-                        className={`text-xs ${
-                          result.type === 'movie' 
-                            ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
-                            : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-                        }`}
-                      >
-                        {result.type === 'movie' ? 'Movie' : 'TV Show'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      onClick={() => handleSelectContentAndClear(result)}
-                      variant="outline"
-                      size="sm"
-                      className="glass-card hover:bg-muted/20 transition-colors duration-300 rounded-lg"
+        {isLoggedIn ? ( 
+          <>
+            <SearchInput
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onSearchSubmit={onSearchSubmit}
+                onClear={handleClearResults}
+                loading={loading}
+            />
+            {searchResults.length > 0 && (
+              <div className="mt-6 glass-card rounded-2xl p-6 max-h-[500px] overflow-y-auto">
+                <h3 className="text-lg font-semibold mb-4">Search Results</h3>
+                <div className="space-y-4">
+                  {searchResults.map((result) => (
+                    <div
+                      key={result.id}
+                      className="bg-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
                     >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Details
-                    </Button>
-                    <Button
-                      onClick={() => handleAddToWatchlistAndFeedback(result)}
-                      size="sm"
-                      className="transition-colors duration-300 rounded-lg"
-                      disabled={addingToWatchlist === result.id}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {addingToWatchlist === result.id ? "Adding..." : "Watchlist"}
-                    </Button>
-                  </div>
+                      {result.poster_path ? (
+                        <div className="relative w-[60px] h-[90px] flex-shrink-0">
+                          <Image
+                            src={result.poster_path}
+                            alt={`${result.title} poster`}
+                            fill
+                            className="rounded-lg object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[60px] h-[90px] flex-shrink-0">
+                          No Poster
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-lg truncate mb-2">{result.title}</h4>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">
+                            {result.year}
+                          </Badge>
+                          <Badge 
+                            className={`text-xs ${
+                              result.type === 'movie' 
+                                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                                : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                            }`}
+                          >
+                            {result.type === 'movie' ? 'Movie' : 'TV Show'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          onClick={() => handleSelectContentAndClear(result)}
+                          variant="outline"
+                          size="sm"
+                          className="glass-card hover:bg-muted/20 transition-colors duration-300 rounded-lg"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Details
+                        </Button>
+                        <Button
+                          onClick={() => handleAddToWatchlistAndFeedback(result)}
+                          size="sm"
+                          className="transition-colors duration-300 rounded-lg"
+                          disabled={addingToWatchlist === result.id}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          {addingToWatchlist === result.id ? "Adding..." : "Watchlist"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+                <AddMovieDialog onAddMovie={onAddMovie} />
+                <AddTVShowDialog onAddTVShow={onAddTVShow} />
             </div>
-          </div>
+          </>
+        ) : (
+            loginPrompt
         )}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
-            <AddMovieDialog onAddMovie={onAddMovie} />
-            <AddTVShowDialog onAddTVShow={onAddTVShow} />
-        </div>
       </motion.div>
     </div>
   );
