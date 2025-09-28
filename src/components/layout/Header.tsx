@@ -1,7 +1,9 @@
+// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/components/layout/Header.tsx (UPDATED)
 "use client";
 
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AuthButtons } from "@/components/auth/AuthButtons"; // ADDED
 
 export const Header = () => {
   return (
@@ -15,6 +17,7 @@ export const Header = () => {
               </span>
             </Link>
             <div className="flex items-center gap-4">
+              <AuthButtons /> 
               <ThemeToggle />
             </div>
           </div>

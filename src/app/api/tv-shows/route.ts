@@ -1,27 +1,37 @@
-
+// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/app/api/tv-shows/route.ts
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
+import { getUserIdFromSession } from "@/lib/auth-utils";
 
 export async function GET() {
     try {
+        const userId = await getUserIdFromSession();
         const client = await clientPromise;
         const db = client.db("cinepath");
-        const tvShows = await db.collection("tv_shows").find({}).sort({ addedAt: -1 }).toArray();
+        const tvShows = await db.collection("tv_shows").find({ userId }).sort({ addedAt: -1 }).toArray();
         return NextResponse.json(tvShows);
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         return NextResponse.json({ error: "Failed to fetch TV shows" }, { status: 500 });
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
+        const userId = await getUserIdFromSession();
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
         const { title, poster_path, seasonsWatched, genre, plot, rating, actors, imdbRating, myRating, personalNotes, isFavorite } = body;
 
-        const existingShow = await db.collection("tv_shows").findOne({ title: { $regex: new RegExp(`^${title}$`, 'i') } });
+        // Check for existing show *for this user*
+        const existingShow = await db.collection("tv_shows").findOne({ 
+            title: { $regex: new RegExp(`^${title}$`, 'i') },
+            userId // FILTER BY userId
+        });
 
         if (existingShow) {
             const newSeason = seasonsWatched[0];
@@ -35,7 +45,7 @@ export async function POST(request: NextRequest) {
                     watchedEpisodes: [...new Set([...updatedSeasons[seasonIndex].watchedEpisodes, ...newSeason.watchedEpisodes])]
                 };
                 await db.collection("tv_shows").updateOne(
-                    { _id: existingShow._id },
+                    { _id: existingShow._id, userId }, // FILTER BY userId
                     { 
                         $set: { 
                             seasonsWatched: updatedSeasons,
@@ -53,7 +63,7 @@ export async function POST(request: NextRequest) {
             } else {
                 // Add new season
                 await db.collection("tv_shows").updateOne(
-                    { _id: existingShow._id },
+                    { _id: existingShow._id, userId }, // FILTER BY userId
                     { 
                         $push: { seasonsWatched: newSeason },
                         $set: {
@@ -84,11 +94,15 @@ export async function POST(request: NextRequest) {
                 myRating,
                 personalNotes,
                 isFavorite,
-                addedAt: new Date() 
+                addedAt: new Date(),
+                userId, // ADDED userId
             });
             return NextResponse.json(result, { status: 201 });
         }
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         console.error("TV Show API error:", e);
         return NextResponse.json({ error: "Failed to add/update TV show" }, { status: 500 });
     }
@@ -96,6 +110,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
     try {
+        const userId = await getUserIdFromSession();
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
@@ -106,7 +121,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const result = await db.collection("tv_shows").updateOne(
-            { _id: new ObjectId(_id) },
+            { _id: new ObjectId(_id), userId }, // FILTER BY userId
             {
                 $set: {
                     myRating,
@@ -117,6 +132,9 @@ export async function PUT(request: NextRequest) {
         );
         return NextResponse.json(result);
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         console.error("Failed to update TV show:", e);
         return NextResponse.json({ error: "Failed to update TV show" }, { status: 500 });
     }
@@ -124,6 +142,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try {
+        const userId = await getUserIdFromSession();
         const client = await clientPromise;
         const db = client.db("cinepath");
         const { searchParams } = new URL(request.url);
@@ -131,9 +150,12 @@ export async function DELETE(request: NextRequest) {
         if (!id) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
-        const result = await db.collection("tv_shows").deleteOne({ _id: new ObjectId(id) });
+        const result = await db.collection("tv_shows").deleteOne({ _id: new ObjectId(id), userId }); // FILTER BY userId
         return NextResponse.json(result);
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         return NextResponse.json({ error: "Failed to delete TV show" }, { status: 500 });
     }
 }

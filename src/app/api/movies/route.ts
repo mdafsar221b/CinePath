@@ -1,21 +1,28 @@
-// src/app/api/movies/route.ts
+// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/app/api/movies/route.ts
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
+import { getUserIdFromSession } from "@/lib/auth-utils";
 
 export async function GET() {
     try {
+        const userId = await getUserIdFromSession(); 
         const client = await clientPromise;
         const db = client.db("cinepath"); 
-        const movies = await db.collection("movies").find({}).sort({ addedAt: -1 }).toArray();
+        // FILTER BY userId
+        const movies = await db.collection("movies").find({ userId }).sort({ addedAt: -1 }).toArray(); 
         return NextResponse.json(movies);
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         return NextResponse.json({ error: "Failed to fetch movies" }, { status: 500 });
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
+        const userId = await getUserIdFromSession(); 
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
@@ -30,18 +37,23 @@ export async function POST(request: NextRequest) {
             actors,
             director,
             imdbRating,
-            myRating, // new field
-            personalNotes, // new field
-            addedAt: new Date() 
+            myRating,
+            personalNotes,
+            addedAt: new Date(),
+            userId, // ADDED userId
         });
         return NextResponse.json(result, { status: 201 });
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         return NextResponse.json({ error: "Failed to add movie" }, { status: 500 });
     }
 }
 
 export async function PUT(request: NextRequest) {
     try {
+        const userId = await getUserIdFromSession(); 
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
@@ -52,7 +64,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const result = await db.collection("movies").updateOne(
-            { _id: new ObjectId(_id) },
+            { _id: new ObjectId(_id), userId }, // FILTER BY userId
             { 
                 $set: {
                     myRating,
@@ -62,6 +74,9 @@ export async function PUT(request: NextRequest) {
         );
         return NextResponse.json(result);
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         console.error("Failed to update movie:", e);
         return NextResponse.json({ error: "Failed to update movie" }, { status: 500 });
     }
@@ -69,6 +84,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try {
+        const userId = await getUserIdFromSession(); 
         const client = await clientPromise;
         const db = client.db("cinepath");
         const { searchParams } = new URL(request.url);
@@ -76,9 +92,12 @@ export async function DELETE(request: NextRequest) {
         if (!id) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
-        const result = await db.collection("movies").deleteOne({ _id: new ObjectId(id) });
+        const result = await db.collection("movies").deleteOne({ _id: new ObjectId(id), userId }); // FILTER BY userId
         return NextResponse.json(result);
     } catch (e) {
+        if (e instanceof Error && e.message === "User not authenticated.") {
+            return NextResponse.json({ error: e.message }, { status: 401 });
+        }
         return NextResponse.json({ error: "Failed to delete movie" }, { status: 500 });
     }
 }

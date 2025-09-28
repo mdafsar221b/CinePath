@@ -32,6 +32,7 @@ export type Movie = {
   imdbRating?: string;
   myRating?: number; 
   personalNotes?: string; 
+  userId: string; 
 };
 
 export type WatchedSeason = {
@@ -54,6 +55,8 @@ export type TVShow = {
   myRating?: number; 
   personalNotes?: string; 
   isFavorite?: boolean; 
+  userId: string; 
+  
 };
 
 export type DetailedContent = {
@@ -70,6 +73,7 @@ export type DetailedContent = {
   type: 'movie' | 'tv';
 };
 
+
 export type WatchlistItem = {
   _id: string;
   id: string;
@@ -84,8 +88,8 @@ export type WatchlistItem = {
   director?: string;
   imdbRating?: string;
   addedAt: Date;
+  userId: string; 
 };
-
 export type SortOption =
   | "addedAt_desc"
   | "addedAt_asc"

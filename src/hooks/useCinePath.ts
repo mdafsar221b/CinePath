@@ -1,10 +1,16 @@
+// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/hooks/useCinePath.ts (UPDATED)
 "use client";
 
 import { useEffect, useState } from "react";
 import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption } from "@/lib/types";
 import { sortContent } from "@/lib/utils";
+import { useSession } from "next-auth/react"; // ADDED
 
 export const useCinePath = () => {
+    const { data: session, status } = useSession(); // ADDED
+    const isLoggedIn = status === 'authenticated';
+    const isLoadingSession = status === 'loading';
+    
     const [movies, setMovies] = useState<Movie[]>([]);
     const [tvShows, setTVShows] = useState<TVShow[]>([]);
     const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
@@ -22,6 +28,10 @@ export const useCinePath = () => {
     const [tvShowToEdit, setTvShowToEdit] = useState<TVShow | null>(null);
 
     const fetchMovies = async () => {
+        if (!isLoggedIn) {
+            setMovies([]);
+            return;
+        }
         try {
             const res = await fetch("/api/movies");
             if (!res.ok) throw new Error("Failed to fetch movies");
@@ -33,6 +43,10 @@ export const useCinePath = () => {
     };
 
     const fetchTVShows = async () => {
+        if (!isLoggedIn) {
+            setTVShows([]);
+            return;
+        }
         try {
             const res = await fetch("/api/tv-shows");
             if (!res.ok) throw new Error("Failed to fetch TV shows");
@@ -44,6 +58,10 @@ export const useCinePath = () => {
     };
 
     const fetchWatchlist = async () => {
+        if (!isLoggedIn) {
+            setWatchlist([]);
+            return;
+        }
         try {
             const res = await fetch("/api/watchlist");
             if (!res.ok) throw new Error("Failed to fetch watchlist");
@@ -55,10 +73,16 @@ export const useCinePath = () => {
     };
 
     useEffect(() => {
-        fetchMovies();
-        fetchTVShows();
-        fetchWatchlist();
-    }, []);
+        if (isLoggedIn) {
+            fetchMovies();
+            fetchTVShows();
+            fetchWatchlist();
+        } else if (status === 'unauthenticated') {
+             setMovies([]);
+             setTVShows([]);
+             setWatchlist([]);
+        }
+    }, [isLoggedIn, status]); // DEPEND ON isLoggedIn/status
 
     useEffect(() => {
         let newFilteredMovies = movieGenreFilter === "all"
@@ -79,6 +103,7 @@ export const useCinePath = () => {
     }, [tvShows, tvGenreFilter, tvShowSort]);
 
     const handleAddMovie = async (newMovie: NewMovie) => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         await fetch("/api/movies", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -88,38 +113,46 @@ export const useCinePath = () => {
     };
 
     const handleRemoveMovie = async (_id: string) => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         await fetch(`/api/movies?id=${_id}`, { method: "DELETE" });
         fetchMovies();
     };
 
     const handleEditMovie = (movie: Movie) => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         setMovieToEdit(movie);
         setEditMovieOpen(true);
     };
 
     const handleUpdateMovie = async () => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         fetchMovies();
     };
 
     const handleAddTVShow = async (title: string, poster_path: string | null, seasonsWatched: WatchedSeason[]) => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         await fetchTVShows();
     };
 
     const handleRemoveTVShow = async (_id: string) => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         await fetch(`/api/tv-shows?id=${_id}`, { method: "DELETE" });
         fetchTVShows();
     };
 
     const handleEditTVShow = (show: TVShow) => {
+      if (!isLoggedIn) return; // ADDED AUTH CHECK
       setTvShowToEdit(show);
       setEditTVShowOpen(true);
     };
 
     const handleUpdateTVShow = async () => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         fetchTVShows();
     };
 
     const handleRemoveFromWatchlist = async (_id: string) => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         try {
             await fetch(`/api/watchlist?id=${_id}`, { method: "DELETE" });
             fetchWatchlist();
@@ -187,6 +220,7 @@ export const useCinePath = () => {
     };
 
     const handleMarkWatched = async (item: WatchlistItem) => {
+        if (!isLoggedIn) return; // ADDED AUTH CHECK
         if (item.type === 'movie') {
             const movieData = {
                 title: item.title,
@@ -234,6 +268,11 @@ export const useCinePath = () => {
     };
 
     const handleAddToWatchlist = async (item: any) => {
+        if (!isLoggedIn) { // ADDED AUTH CHECK
+            alert("Please log in to add items to your watchlist.");
+            return;
+        } 
+
         try {
             console.log("Adding to watchlist:", item);
             const res = await fetch("/api/watchlist", {
@@ -300,6 +339,8 @@ export const useCinePath = () => {
         handleMarkWatched,
         fetchWatchlist,
         handleSelectContent,
-        handleAddToWatchlist
+        handleAddToWatchlist,
+        isLoggedIn, 
+        isLoadingSession 
     };
 };
