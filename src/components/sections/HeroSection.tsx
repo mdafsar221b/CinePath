@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -115,6 +114,7 @@ export const HeroSection = ({
                             src={result.poster_path}
                             alt={`${result.title} poster`}
                             fill
+                            sizes="60px"
                             className="rounded-lg object-cover"
                           />
                         </div>

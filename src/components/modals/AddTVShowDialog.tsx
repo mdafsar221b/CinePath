@@ -143,8 +143,8 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
       </DialogTrigger>
       <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Add TV Show</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogTitle id="add-tv-show-title" className="text-xl font-semibold">Add TV Show</DialogTitle>
+          <DialogDescription id="add-tv-show-description" className="text-muted-foreground">
             Search for a TV show and add the seasons you've watched.
           </DialogDescription>
         </DialogHeader>
@@ -183,6 +183,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                             src={show.poster_path}
                             alt={`${show.name} poster`}
                             fill
+                            sizes="50px"
                             className="rounded-lg object-cover"
                           />
                         </div>
@@ -217,6 +218,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                     src={selectedShow.poster_path}
                     alt={`${selectedShow.name} poster`}
                     fill
+                    sizes="60px"
                     className="rounded-lg object-cover"
                   />
                 </div>

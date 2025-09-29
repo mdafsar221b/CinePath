@@ -134,8 +134,8 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
       </DialogTrigger>
       <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Add Movie</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogTitle id="add-movie-title" className="text-xl font-semibold">Add Movie</DialogTitle>
+          <DialogDescription id="add-movie-description" className="text-muted-foreground">
             {isManualEntry ? "Enter movie details manually." : "Search for a movie to add it to your collection."}
           </DialogDescription>
         </DialogHeader>
@@ -173,6 +173,7 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
                             src={movie.poster_path}
                             alt={`${movie.title} poster`}
                             fill
+                            sizes="50px"
                             className="rounded-lg object-cover"
                           />
                         </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
 import { ChevronLeft, ChevronRight } from "lucide-react"; 
-import { Badge } from "@/components/ui/badge"; // Ensure Badge is imported
+import { Badge } from "@/components/ui/badge"; 
 
 interface MovieSectionProps {
   filteredMovies: Movie[];
@@ -117,9 +117,10 @@ export const MovieSection = ({
             className="glass-card"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
+            Previous
           </Button>
           <span className="text-sm text-muted-foreground">
-            {currentPage} of {totalPages}
+            Page {currentPage} of {totalPages}
           </span>
           <Button
             variant="outline"
@@ -127,6 +128,7 @@ export const MovieSection = ({
             disabled={currentPage === totalPages}
             className="glass-card"
           >
+            Next
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>

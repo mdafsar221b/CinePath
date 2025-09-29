@@ -4,7 +4,7 @@ export const Footer = () => {
       <div className="container mx-auto px-4 md:px-8 py-8">
         <div className="text-center space-y-3">
           <p className="text-muted-foreground">
-            &copy; {new Date().getFullYear()} CinePath. Crafted with passion for cinema.
+            &copy; {new Date().getFullYear()} CinePath, by Afsar. Crafted with passion for cinema.
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <span>Built with</span>

@@ -1,5 +1,3 @@
-// mdafsar221b/cinepath/CinePath-ed0512876bf9ae6b339c553aeb3a48201202f7b2/src/components/core/TVShowCard.tsx
-
 import { TVShow } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { X, Pencil } from "lucide-react";
@@ -30,7 +28,7 @@ export const TVShowCard = ({ show, onRemove, onShowDetails, onEdit }: TVShowCard
             src={posterUrl}
             alt={`${show.title} poster`}
             fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 15vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
