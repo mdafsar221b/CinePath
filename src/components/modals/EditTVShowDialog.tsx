@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -14,9 +15,8 @@ import { useState, useEffect } from "react";
 import { TVShow, WatchedSeason } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Toggle } from "@/components/ui/toggle";
 import { Checkbox } from "@/components/ui/checkbox";
-
+import { Loader2 } from "lucide-react"; 
 
 interface EditTVShowDialogProps {
   open: boolean;
@@ -31,22 +31,33 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const [isFavorite, setIsFavorite] = useState(false);
   const [newSeasonNumber, setNewSeasonNumber] = useState<number | null>(null);
   const [newEpisodeCount, setNewEpisodeCount] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingSeason, setLoadingSeason] = useState(false);
 
   useEffect(() => {
     if (show) {
+     
       setMyRating(show.myRating || null);
       setPersonalNotes(show.personalNotes || "");
       setIsFavorite(show.isFavorite || false);
+      
+      setNewSeasonNumber(null);
+      setNewEpisodeCount(null);
     }
-  }, [show]);
+  }, [show, open]); 
+
+  
+  const getTotalEpisodes = (seasons: WatchedSeason[]) => {
+    return seasons.reduce((sum, season) => sum + (season.watchedEpisodes?.length || 0), 0);
+  };
+
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!show) return;
 
-    setLoading(true);
-    const updatedShow = {
+    setLoadingDetails(true);
+    const updatedShowPayload = {
       _id: show._id,
       myRating,
       personalNotes,
@@ -54,34 +65,53 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
     };
 
     try {
-      await fetch("/api/tv-shows", {
+      const res = await fetch("/api/tv-shows", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedShow),
+        body: JSON.stringify(updatedShowPayload),
       });
-      onEditTVShow(updatedShow as TVShow);
-      onOpenChange(false);
+
+      if (!res.ok) throw new Error("Failed to update TV show details.");
+
+      
+      onEditTVShow({
+        ...show,
+        ...updatedShowPayload,
+      } as TVShow);
+      
+      onOpenChange(false); 
     } catch (error) {
-      console.error("Error updating TV show:", error);
+      console.error("Error updating TV show details:", error);
     } finally {
-      setLoading(false);
+      setLoadingDetails(false);
     }
   };
 
   const handleAddSeason = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!show || !newSeasonNumber || newEpisodeCount === null) return;
+    if (newSeasonNumber < 1 || newEpisodeCount < 1) return;
 
-    setLoading(true);
+
+    
+    const existingSeason = show.seasonsWatched.find(s => s.season === newSeasonNumber);
+    if (existingSeason) {
+        alert(`Season ${newSeasonNumber} is already tracked. Please use an update feature if you need to modify its episodes (currently not supported).`);
+        return;
+    }
+
+
+    setLoadingSeason(true);
 
     const newWatchedSeason: WatchedSeason = {
         season: newSeasonNumber,
+       
         watchedEpisodes: Array.from({ length: newEpisodeCount }, (_, i) => i + 1)
     };
 
     try {
-        await fetch("/api/tv-shows", {
-            method: "POST",
+        const res = await fetch("/api/tv-shows", {
+            method: "POST", 
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 title: show.title,
@@ -89,27 +119,35 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
             }),
         });
 
+        if (!res.ok) throw new Error("Failed to add new season.");
+        
+       
+        const updatedSeasons = [...(show.seasonsWatched || []), newWatchedSeason].sort((a, b) => a.season - b.season);
+
         onEditTVShow({
           ...show,
-          seasonsWatched: [...(show.seasonsWatched || []), newWatchedSeason]
+          seasonsWatched: updatedSeasons
         });
         
+       
         setNewSeasonNumber(null);
         setNewEpisodeCount(null);
     } catch (error) {
         console.error("Error adding new season:", error);
     } finally {
-        setLoading(false);
+        setLoadingSeason(false);
     }
   };
 
-  if (!show) return null;
 
-  const totalEpisodes = show.seasonsWatched.reduce((sum, season) => sum + (season.watchedEpisodes?.length || 0), 0);
+  if (!show) return null;
+  
+  const totalEpisodes = getTotalEpisodes(show.seasonsWatched);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">
+    
+      <DialogContent className="glass-card border-border/50 text-foreground max-w-lg sm:max-w-xl md:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Edit {show.title}</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -117,6 +155,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
           </DialogDescription>
         </DialogHeader>
 
+       
         <form onSubmit={handleEdit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="myRating" className="text-sm font-medium">My Rating (1-10)</Label>
@@ -146,18 +185,19 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                 checked={isFavorite}
                 onCheckedChange={checked => setIsFavorite(checked === true)}
               />
-              <label
+              <Label
                 htmlFor="isFavorite"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Mark as Favorite
-              </label>
+              </Label>
             </div>
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">Watched Seasons:</h4>
             <div className="flex flex-wrap gap-2">
-                {show.seasonsWatched.map(season => (
-                    <Badge key={season.season} variant="outline" className="text-sm">
+               
+                {show.seasonsWatched.sort((a, b) => a.season - b.season).map(season => (
+                    <Badge key={season.season} variant="outline" className="text-sm bg-primary/10 text-primary border-primary/20">
                         S{season.season}: {season.watchedEpisodes?.length || 0} Episodes
                     </Badge>
                 ))}
@@ -166,14 +206,15 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
             <p className="text-sm text-muted-foreground mt-2">Total Watched: {show.seasonsWatched.length} Seasons, {totalEpisodes} Episodes</p>
           </div>
           <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1 rounded-xl" disabled={loading}>
-              {loading ? "Saving..." : "Save Personal Details"}
+            <Button type="submit" className="flex-1 rounded-xl" disabled={loadingDetails}>
+              {loadingDetails ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Personal Details"}
             </Button>
           </div>
         </form>
 
+       
         <div className="mt-4 border-t border-border/50 pt-4">
-            <h4 className="text-xl font-semibold mb-2">Add New Season</h4>
+            <h4 className="text-xl font-semibold mb-4">Add New Season</h4>
             <form onSubmit={handleAddSeason} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -201,8 +242,12 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                         />
                     </div>
                 </div>
-                <Button type="submit" className="w-full rounded-xl" disabled={loading}>
-                    Add Season
+                <Button 
+                    type="submit" 
+                    className="w-full rounded-xl" 
+                    disabled={loadingSeason || !newSeasonNumber || newEpisodeCount === null}
+                >
+                    {loadingSeason ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Season...</> : "Add Season"}
                 </Button>
             </form>
         </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCinePath } from "@/hooks/useCinePath";
@@ -62,6 +61,13 @@ const HomePage = () => {
         isLoggedIn, 
         isLoadingSession, 
         
+        totalFilteredMovies,
+        totalFilteredTVShows,
+        itemsPerPage,
+        moviesPage,
+        setMoviesPage,
+        tvShowsPage,
+        setTvShowsPage,
     } = useCinePath();
     const [searchTerm, setSearchTerm] = useState("");
    
@@ -156,6 +162,11 @@ const HomePage = () => {
                                 onRemove={handleRemoveMovie}
                                 onShowDetails={handleShowMovieDetails}
                                 onEdit={handleEditMovie}
+                                // Pagination props
+                                currentPage={moviesPage}
+                                totalItems={totalFilteredMovies}
+                                itemsPerPage={itemsPerPage}
+                                onSetPage={setMoviesPage}
                             />
                             <TVShowSection
                                 filteredTVShows={filteredTVShows}
@@ -167,6 +178,11 @@ const HomePage = () => {
                                 onRemove={handleRemoveTVShow}
                                 onShowDetails={handleShowTVDetails}
                                 onEdit={handleEditTVShow}
+                                // Pagination props
+                                currentPage={tvShowsPage}
+                                totalItems={totalFilteredTVShows}
+                                itemsPerPage={itemsPerPage}
+                                onSetPage={setTvShowsPage}
                             />
                         </div>
                     ) : null}

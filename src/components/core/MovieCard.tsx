@@ -1,3 +1,5 @@
+// mdafsar221b/cinepath/CinePath-ed0512876bf9ae6b339c553aeb3a48201202f7b2/src/components/core/MovieCard.tsx
+
 import { Movie } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { X, Pencil } from "lucide-react";
@@ -20,7 +22,7 @@ export const MovieCard = ({ movie, onRemove, onShowDetails, onEdit }: MovieCardP
       className="hover-lift rounded-2xl group border-border/50 relative overflow-hidden bg-secondary/30 cursor-pointer"
       onClick={() => onShowDetails(movie)}
     >
-      <div className="relative w-full h-[300px] overflow-hidden rounded-t-2xl">
+      <div className="relative w-full h-[250px] overflow-hidden rounded-t-2xl">
         {posterUrl ? (
           <Image
             src={posterUrl}

@@ -1,10 +1,10 @@
-
-
 import { Movie, SortOption } from "@/lib/types";
 import { MovieCard } from "@/components/core/MovieCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
+import { ChevronLeft, ChevronRight } from "lucide-react"; 
+import { Badge } from "@/components/ui/badge"; // Ensure Badge is imported
 
 interface MovieSectionProps {
   filteredMovies: Movie[];
@@ -16,6 +16,11 @@ interface MovieSectionProps {
   onRemove: (_id: string) => void;
   onShowDetails: (movie: Movie) => void;
   onEdit: (movie: Movie) => void;
+  
+  currentPage: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onSetPage: (page: number) => void;
 }
 
 export const MovieSection = ({
@@ -28,13 +33,24 @@ export const MovieSection = ({
   onRemove,
   onShowDetails,
   onEdit,
+  currentPage,
+  totalItems,
+  itemsPerPage,
+  onSetPage,
 }: MovieSectionProps) => {
+  
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const showPagination = totalPages > 1;
+
   return (
     <section className="mb-16">
      
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-3">
-          Movies Watched
+          Movies Watched 
+          <Badge variant="outline" className="text-sm font-medium ml-1">
+            {totalItems}
+          </Badge>
         </h2>
         
       
@@ -91,6 +107,30 @@ export const MovieSection = ({
           </div>
         )}
       </div>
+
+      {showPagination && (
+        <div className="mt-8 flex items-center justify-center space-x-4">
+          <Button
+            variant="outline"
+            onClick={() => onSetPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="glass-card"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => onSetPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="glass-card"
+          >
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
     </section>
   );
 };

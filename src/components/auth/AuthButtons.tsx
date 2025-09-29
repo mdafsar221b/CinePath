@@ -19,9 +19,6 @@ export const AuthButtons = () => {
     const displayName = rawName.split(' ')[0].split('@')[0]; 
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm font-medium text-primary hidden sm:block whitespace-nowrap">
-          Welcome, {displayName}
-        </span>
         <Button
           variant="outline"
           onClick={() => signOut({ callbackUrl: "/" })}

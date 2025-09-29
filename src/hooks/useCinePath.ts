@@ -1,10 +1,12 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption } from "@/lib/types";
 import { sortContent } from "@/lib/utils";
 import { useSession } from "next-auth/react"; 
+
+const ITEMS_PER_PAGE = 15; // Define pagination constant
+
 export const useCinePath = () => {
     const { data: session, status } = useSession(); 
     const isLoggedIn = status === 'authenticated';
@@ -13,8 +15,19 @@ export const useCinePath = () => {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [tvShows, setTVShows] = useState<TVShow[]>([]);
     const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
-    const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
-    const [filteredTVShows, setFilteredTVShows] = useState<TVShow[]>([]);
+    
+    // Arrays containing content after genre filtering and sorting, but BEFORE pagination
+    const [sortedMovies, setSortedMovies] = useState<Movie[]>([]);
+    const [sortedTVShows, setSortedTVShows] = useState<TVShow[]>([]);
+
+    // Arrays containing content AFTER pagination slice
+    const [paginatedMovies, setPaginatedMovies] = useState<Movie[]>([]);
+    const [paginatedTVShows, setPaginatedTVShows] = useState<TVShow[]>([]);
+    
+    // Pagination state
+    const [moviesPage, setMoviesPage] = useState<number>(1);
+    const [tvShowsPage, setTvShowsPage] = useState<number>(1);
+
     const [movieGenreFilter, setMovieGenreFilter] = useState<string>("all");
     const [tvGenreFilter, setTvGenreFilter] = useState<string>("all");
     const [movieSort, setMovieSort] = useState<SortOption>("addedAt_desc");
@@ -83,23 +96,41 @@ export const useCinePath = () => {
         }
     }, [isLoggedIn, status]); // DEPEND ON isLoggedIn/status
 
+    // 1. Filter and Sort Movies
     useEffect(() => {
-        let newFilteredMovies = movieGenreFilter === "all"
+        let newSortedMovies = movieGenreFilter === "all"
             ? movies
             : movies.filter(movie =>
                 movie.genre && movie.genre.toLowerCase().includes(movieGenreFilter.toLowerCase())
             );
-        setFilteredMovies(sortContent(newFilteredMovies, movieSort));
+        setSortedMovies(sortContent(newSortedMovies, movieSort));
+        setMoviesPage(1); // Reset page on filter/sort change
     }, [movies, movieGenreFilter, movieSort]);
-
+    
+    // 2. Paginate Movies
     useEffect(() => {
-        let newFilteredTVShows = tvGenreFilter === "all"
+        const startIndex = (moviesPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        setPaginatedMovies(sortedMovies.slice(startIndex, endIndex));
+    }, [sortedMovies, moviesPage]);
+
+    // 1. Filter and Sort TV Shows
+    useEffect(() => {
+        let newSortedTVShows = tvGenreFilter === "all"
             ? tvShows
             : tvShows.filter(show =>
                 show.genre && show.genre.toLowerCase().includes(tvGenreFilter.toLowerCase())
             );
-        setFilteredTVShows(sortContent(newFilteredTVShows, tvShowSort));
+        setSortedTVShows(sortContent(newSortedTVShows, tvShowSort));
+        setTvShowsPage(1); // Reset page on filter/sort change
     }, [tvShows, tvGenreFilter, tvShowSort]);
+
+    // 2. Paginate TV Shows
+    useEffect(() => {
+        const startIndex = (tvShowsPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        setPaginatedTVShows(sortedTVShows.slice(startIndex, endIndex));
+    }, [sortedTVShows, tvShowsPage]);
 
     const handleAddMovie = async (newMovie: NewMovie) => {
         if (!isLoggedIn) return; 
@@ -219,7 +250,7 @@ export const useCinePath = () => {
     };
 
     const handleMarkWatched = async (item: WatchlistItem) => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         if (item.type === 'movie') {
             const movieData = {
                 title: item.title,
@@ -312,8 +343,22 @@ export const useCinePath = () => {
         movies,
         tvShows,
         watchlist,
-        filteredMovies,
-        filteredTVShows,
+        
+        // Return PAGINATED arrays to the components
+        filteredMovies: paginatedMovies,
+        filteredTVShows: paginatedTVShows,
+        
+        // Return TOTAL sorted count for pagination controls
+        totalFilteredMovies: sortedMovies.length, 
+        totalFilteredTVShows: sortedTVShows.length,
+        itemsPerPage: ITEMS_PER_PAGE,
+        
+        // Pagination state
+        moviesPage,
+        setMoviesPage,
+        tvShowsPage,
+        setTvShowsPage,
+
         movieGenreFilter,
         tvGenreFilter,
         movieSort,

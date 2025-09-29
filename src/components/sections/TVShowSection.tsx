@@ -1,11 +1,11 @@
-
-
 import { TVShow, SortOption } from "@/lib/types";
 import { TVShowCard } from "@/components/core/TVShowCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
+import { ChevronLeft, ChevronRight } from "lucide-react"; 
+
 
 interface TVShowSectionProps {
   filteredTVShows: TVShow[];
@@ -17,6 +17,11 @@ interface TVShowSectionProps {
   onRemove: (_id: string) => void;
   onShowDetails: (show: TVShow) => void;
   onEdit: (show: TVShow) => void;
+
+  currentPage: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onSetPage: (page: number) => void;
 }
 
 export const TVShowSection = ({
@@ -29,13 +34,24 @@ export const TVShowSection = ({
   onRemove,
   onShowDetails,
   onEdit,
+  currentPage,
+  totalItems,
+  itemsPerPage,
+  onSetPage,
 }: TVShowSectionProps) => {
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const showPagination = totalPages > 1;
+
   return (
     <section className="mb-16">
     
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-3">
           TV Shows Watched
+          <Badge variant="outline" className="text-sm font-medium ml-1">
+            {totalItems}
+          </Badge>
         </h2>
         
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -88,6 +104,32 @@ export const TVShowSection = ({
           </div>
         )}
       </div>
+
+      {showPagination && (
+        <div className="mt-8 flex items-center justify-center space-x-4">
+          <Button
+            variant="outline"
+            onClick={() => onSetPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="glass-card"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => onSetPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="glass-card"
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
     </section>
   );
 };
