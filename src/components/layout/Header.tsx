@@ -1,11 +1,17 @@
-// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/components/layout/Header.tsx (UPDATED)
+// src/components/layout/Header.tsx (Updated)
+
 "use client";
 
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AuthButtons } from "@/components/auth/AuthButtons"; 
+import React from "react"; 
 
-export const Header = () => {
+interface HeaderProps {
+  dashboardButton?: React.ReactNode; 
+}
+
+export const Header = ({ dashboardButton }: HeaderProps) => { 
   return (
     <>
       <header className="sticky top-0 z-50 bg-background/50 border-b border-border/50 backdrop-blur-xl">
@@ -17,6 +23,7 @@ export const Header = () => {
               </span>
             </Link>
             <div className="flex items-center gap-4">
+              {dashboardButton} {/* Renders the new Stats button/dialog trigger */}
               <AuthButtons /> 
               <ThemeToggle />
             </div>

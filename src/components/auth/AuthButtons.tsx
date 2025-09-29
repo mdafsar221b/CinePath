@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
@@ -13,10 +14,13 @@ export const AuthButtons = () => {
   }
 
   if (session?.user?.email) {
+   
+    const rawName = session.user.name || session.user.email;
+    const displayName = rawName.split(' ')[0].split('@')[0]; 
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm font-medium text-primary hidden sm:block">
-          Welcome, {session.user.email.split("@")[0]}
+        <span className="text-sm font-medium text-primary hidden sm:block whitespace-nowrap">
+          Welcome, {displayName}
         </span>
         <Button
           variant="outline"

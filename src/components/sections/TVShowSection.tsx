@@ -1,4 +1,5 @@
 
+
 import { TVShow, SortOption } from "@/lib/types";
 import { TVShowCard } from "@/components/core/TVShowCard";
 import { Badge } from "@/components/ui/badge";
@@ -31,33 +32,38 @@ export const TVShowSection = ({
 }: TVShowSectionProps) => {
   return (
     <section className="mb-16">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+    
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-3">
           TV Shows Watched
         </h2>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">Filter by genre:</span>
-          <Select value={tvGenreFilter} onValueChange={onSetTvGenreFilter}>
-            <SelectTrigger className="w-[180px] glass-card">
-              <SelectValue placeholder="All genres" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All genres</SelectItem>
-              {tvGenres.map(genre => (
-                <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {tvGenreFilter !== "all" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onSetTvGenreFilter("all")}
-              className="glass-card"
-            >
-              Clear
-            </Button>
-          )}
+        
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Filter by genre:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={tvGenreFilter} onValueChange={onSetTvGenreFilter}>
+              <SelectTrigger className="w-[150px] sm:w-[180px] glass-card">
+                <SelectValue placeholder="All genres" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All genres</SelectItem>
+                {tvGenres.map(genre => (
+                  <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {tvGenreFilter !== "all" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSetTvGenreFilter("all")}
+                className="glass-card"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        
           <SortSelector value={tvShowSort} onValueChange={onSetTvShowSort} />
         </div>
       </div>

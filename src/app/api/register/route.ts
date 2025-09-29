@@ -1,11 +1,13 @@
-// src/app/api/register/route.ts (NEW)
+
+
 import clientPromise from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 
 export async function POST(request: NextRequest) {
     try {
-        const { email, password } = await request.json();
+     
+        const { email, password, name } = await request.json(); 
         
         if (!email || !password || password.length < 6) {
             return NextResponse.json({ error: "Invalid email or password (min 6 characters)" }, { status: 400 });
@@ -27,6 +29,7 @@ export async function POST(request: NextRequest) {
             email: email.toLowerCase(),
             passwordHash,
             createdAt: new Date(),
+            name: name || null, 
         });
 
         return NextResponse.json({ message: "User created successfully", userId: result.insertedId }, { status: 201 });

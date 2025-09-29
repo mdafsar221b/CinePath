@@ -1,4 +1,4 @@
-// src/lib/types.ts
+
 export type NewMovie = {
   title: string;
   year: number;
@@ -16,6 +16,21 @@ export type NewTVShow = {
   poster_path?: string | null;
   seasonsWatched: WatchedSeason[];
 };
+
+
+export type SearchResult = {
+  id: string;
+  title: string;
+  year: string;
+  poster_path: string | null;
+  type: 'movie' | 'tv';
+  genre?: string;
+  plot?: string;
+  rating?: string;
+  actors?: string;
+  director?: string;
+  imdbRating?: string;
+}
 
 export type Movie = {
   _id: string;

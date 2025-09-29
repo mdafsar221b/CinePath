@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCinePath } from "@/hooks/useCinePath";
@@ -5,14 +6,15 @@ import { Header } from "@/components/layout/Header";
 import { DetailsDialog } from "@/components/modals/DetailsDialog";
 import { EditMovieDialog } from "@/components/modals/EditMovieDialog";
 import { EditTVShowDialog } from "@/components/modals/EditTVShowDialog";
-import { StatsSection } from "@/components/sections/StatsSection";
 import { WatchlistSection } from "@/components/sections/WatchlistSection";
 import { MovieSection } from "@/components/sections/MovieSection";
 import { TVShowSection } from "@/components/sections/TVShowSection";
-import { YearlyProgressSection } from "@/components/sections/YearlyProgressSection";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { useState } from "react";
 import { Loader2 } from "lucide-react"; 
+import { StatsDashboardDialog } from "@/components/modals/StatsDashboardDialog";
+
+import { SearchResult } from "@/lib/types"; 
 
 const HomePage = () => {
     const {
@@ -59,10 +61,11 @@ const HomePage = () => {
         handleAddToWatchlist,
         isLoggedIn, 
         isLoadingSession, 
-        // Note: averagePersonalRating would be destructured here if implemented
+        
     } = useCinePath();
     const [searchTerm, setSearchTerm] = useState("");
-    const [searchResults, setSearchResults] = useState([]);
+   
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [addingToWatchlist, setAddingToWatchlist] = useState<string | null>(null);
 
@@ -101,10 +104,15 @@ const HomePage = () => {
             </p>
         </div>
     );
+  
+    const dashboardStatsButton = isLoggedIn ? (
+      <StatsDashboardDialog movies={movies} tvShows={tvShows} moviesByYear={moviesByYear} />
+    ) : null;
+
 
     return (
         <>
-            <Header />
+            <Header dashboardButton={dashboardStatsButton} />
             <main className="min-h-screen landing-background">
                 <HeroSection
                     searchTerm={searchTerm}
@@ -131,17 +139,7 @@ const HomePage = () => {
                     ) : isLoggedIn ? (
                         <div className="smooth-fade">
                              <hr className="my-16 h-px border-0 bg-gradient-to-r from-transparent via-border to-transparent" /> 
-                            <StatsSection
-                                moviesWatchedCount={movies.length}
-                                tvShowsWatchedCount={tvShows.length}
-                                seasonsWatchedCount={tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.length || 0), 0)}
-                                episodesWatchedCount={tvShows.flatMap(show => show.seasonsWatched ?? []).reduce((acc, season) => acc + (season.watchedEpisodes?.length || 0), 0)}
-                                
-                            />
                             
-                           
-                            <YearlyProgressSection moviesByYear={moviesByYear} />
-
                             <WatchlistSection
                                 watchlist={watchlist}
                                 onRemove={handleRemoveFromWatchlist}
