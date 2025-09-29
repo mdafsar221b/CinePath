@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -28,7 +27,7 @@ interface SearchResult {
 interface HeroSectionProps {
   searchTerm: string;
   setSearchTerm: (value: string) => void;
-  setSearchResults: (value: SearchResult[]) => void; 
+  setSearchResults: (value: SearchResult[]) => void;
   searchResults: SearchResult[];
   loading: boolean;
   addingToWatchlist: string | null;
@@ -37,14 +36,14 @@ interface HeroSectionProps {
   onAddTVShow: (title: string, poster_path: string | null, seasonsWatched: any[]) => void;
   onSelectContent: (result: SearchResult) => void;
   onAddToWatchlist: (item: SearchResult) => Promise<void>;
-  isLoggedIn: boolean; 
+  isLoggedIn: boolean;
   loginPrompt: React.ReactNode;
 }
 
 export const HeroSection = ({
   searchTerm,
   setSearchTerm,
-  setSearchResults, 
+  setSearchResults,
   searchResults,
   loading,
   addingToWatchlist,
@@ -53,30 +52,32 @@ export const HeroSection = ({
   onAddTVShow,
   onSelectContent,
   onAddToWatchlist,
-  isLoggedIn, 
+  isLoggedIn,
   loginPrompt,
 }: HeroSectionProps) => {
 
+  // FIX: Added closing parenthesis and semicolon here
   const handleClearResults = () => {
     setSearchTerm("");
-    setSearchResults([]); 
+    setSearchResults([]);
+  }; // <--- THIS WAS MISSING
 
   const handleAddToWatchlistAndFeedback = async (result: SearchResult) => {
     try {
       await onAddToWatchlist(result);
     } finally {
-      handleClearResults(); 
+      handleClearResults();
     }
   };
 
   const handleSelectContentAndClear = (result: SearchResult) => {
     onSelectContent(result);
-    handleClearResults(); 
+    handleClearResults();
   };
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
-      <motion.section 
+      <motion.section
           className="text-center w-full max-w-2xl mx-auto"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -89,13 +90,13 @@ export const HeroSection = ({
               Track movies, discover shows, and curate your perfect watchlist
           </p>
       </motion.section>
-      <motion.div 
+      <motion.div
           className="w-full max-w-2xl mt-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
       >
-        {isLoggedIn ? ( 
+        {isLoggedIn ? (
           <>
             <SearchInput
                 searchTerm={searchTerm}
@@ -133,10 +134,10 @@ export const HeroSection = ({
                           <Badge variant="outline" className="text-xs">
                             {result.year}
                           </Badge>
-                          <Badge 
+                          <Badge
                             className={`text-xs ${
-                              result.type === 'movie' 
-                                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                              result.type === 'movie'
+                                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                                 : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                             }`}
                           >
@@ -169,9 +170,9 @@ export const HeroSection = ({
                 </div>
                 
                 <div className="mt-6 pt-4 border-t border-border/50">
-                    <Button 
-                        onClick={handleClearResults} 
-                        variant="outline" 
+                    <Button
+                        onClick={handleClearResults}
+                        variant="outline"
                         className="w-full glass-card rounded-xl"
                     >
                         Close Results

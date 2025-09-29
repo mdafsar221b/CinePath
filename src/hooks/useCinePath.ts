@@ -1,13 +1,12 @@
-// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/hooks/useCinePath.ts (UPDATED)
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption } from "@/lib/types";
 import { sortContent } from "@/lib/utils";
-import { useSession } from "next-auth/react"; // ADDED
-
+import { useSession } from "next-auth/react"; 
 export const useCinePath = () => {
-    const { data: session, status } = useSession(); // ADDED
+    const { data: session, status } = useSession(); 
     const isLoggedIn = status === 'authenticated';
     const isLoadingSession = status === 'loading';
     
@@ -103,7 +102,7 @@ export const useCinePath = () => {
     }, [tvShows, tvGenreFilter, tvShowSort]);
 
     const handleAddMovie = async (newMovie: NewMovie) => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         await fetch("/api/movies", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -113,46 +112,46 @@ export const useCinePath = () => {
     };
 
     const handleRemoveMovie = async (_id: string) => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return;
         await fetch(`/api/movies?id=${_id}`, { method: "DELETE" });
         fetchMovies();
     };
 
     const handleEditMovie = (movie: Movie) => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         setMovieToEdit(movie);
         setEditMovieOpen(true);
     };
 
     const handleUpdateMovie = async () => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         fetchMovies();
     };
 
     const handleAddTVShow = async (title: string, poster_path: string | null, seasonsWatched: WatchedSeason[]) => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         await fetchTVShows();
     };
 
     const handleRemoveTVShow = async (_id: string) => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         await fetch(`/api/tv-shows?id=${_id}`, { method: "DELETE" });
         fetchTVShows();
     };
 
     const handleEditTVShow = (show: TVShow) => {
-      if (!isLoggedIn) return; // ADDED AUTH CHECK
+      if (!isLoggedIn) return; 
       setTvShowToEdit(show);
       setEditTVShowOpen(true);
     };
 
     const handleUpdateTVShow = async () => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         fetchTVShows();
     };
 
     const handleRemoveFromWatchlist = async (_id: string) => {
-        if (!isLoggedIn) return; // ADDED AUTH CHECK
+        if (!isLoggedIn) return; 
         try {
             await fetch(`/api/watchlist?id=${_id}`, { method: "DELETE" });
             fetchWatchlist();
@@ -254,21 +253,32 @@ export const useCinePath = () => {
         return acc;
     }, {} as Record<string, number>);
 
-    // New functions moved from page.tsx
+    
+     
     const handleSelectContent = async (result: any) => {
-        try {
-          const res = await fetch(`/api/details?id=${result.id}&type=${result.type === "tv" ? "series" : "movie"}`);
-          if (!res.ok) throw new Error("Failed to fetch details");
-          const details = await res.json();
-          setDetailsOpen(true);
-          setSelectedContent(details);
-        } catch (error) {
-          console.error("Error fetching details:", error);
-        }
+      
+        const contentForDetails: (DetailedContent & Partial<Movie> & Partial<TVShow>) = {
+            id: result.id,
+            title: result.title,
+            year: parseInt(result.year || "0") || 0,
+            poster_path: result.poster_path || null,
+            genre: result.genre || "N/A", 
+            plot: result.plot || "N/A",
+            rating: result.rating || "N/A",
+            actors: result.actors || "N/A",
+            director: result.director || "N/A",
+            imdbRating: result.imdbRating || "N/A",
+            type: result.type,
+        };
+
+        setSelectedContent(contentForDetails);
+        setDetailsOpen(true);
+       
     };
+    
 
     const handleAddToWatchlist = async (item: any) => {
-        if (!isLoggedIn) { // ADDED AUTH CHECK
+        if (!isLoggedIn) { 
             alert("Please log in to add items to your watchlist.");
             return;
         } 

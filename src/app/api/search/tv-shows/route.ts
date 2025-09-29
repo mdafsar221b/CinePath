@@ -1,4 +1,6 @@
+
 import { NextRequest, NextResponse } from "next/server";
+import { fetchOmdbData } from "@/lib/api-utils"; 
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -8,29 +10,31 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Query parameter is required" }, { status: 400 });
     }
     
-    const apiKey = process.env.OMDB_API_KEY;
-    if (!apiKey) {
-        return NextResponse.json({ error: "OMDB_API_KEY is not set" }, { status: 500 });
-    }
-
     try {
-        const apiResponse = await fetch(`http://www.omdbapi.com/?apikey=${apiKey}&s=${encodeURIComponent(query)}&type=series`);
-        if (!apiResponse.ok) {
-            throw new Error(`API call failed with status: ${apiResponse.status}`);
-        }
-        const data = await apiResponse.json();
+        const data = await fetchOmdbData(query, 'series');
         
-        
-        if (data.Response === "False") {
-            return NextResponse.json({ results: [] });
-        }
-
-        
-        const tvShows = data.Search.map((item: any) => ({
+        let tvShows = data.Search?.map((item: any) => ({
             id: item.imdbID,
             name: item.Title,
             poster_path: item.Poster !== "N/A" ? item.Poster : null,
-        }));
+        })) || [];
+
+       
+        const topResultsToEnrich = tvShows.slice(0, 10);
+        const detailPromises = topResultsToEnrich.map((item: any) => 
+            fetchOmdbData(null, 'series', item.id)
+                .catch(e => item)
+        );
+        
+        const enrichedResults = await Promise.allSettled(detailPromises);
+        
+        const enrichedMap = new Map(enrichedResults
+            .filter(r => r.status === 'fulfilled' && r.value?.id)
+            .map(r => [(r as PromiseFulfilledResult<any>).value.id, (r as PromiseFulfilledResult<any>).value])
+        );
+
+        tvShows = tvShows.map((item: any) => enrichedMap.get(item.id) || item);
+        
 
         return NextResponse.json(tvShows);
     } catch (e) {
