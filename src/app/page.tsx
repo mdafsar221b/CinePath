@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCinePath } from "@/hooks/useCinePath";
@@ -60,6 +59,7 @@ const HomePage = () => {
         handleAddToWatchlist,
         isLoggedIn, 
         isLoadingSession, 
+        // Note: averagePersonalRating would be destructured here if implemented
     } = useCinePath();
     const [searchTerm, setSearchTerm] = useState("");
     const [searchResults, setSearchResults] = useState([]);
@@ -109,6 +109,7 @@ const HomePage = () => {
                 <HeroSection
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
+                    setSearchResults={setSearchResults} 
                     searchResults={searchResults}
                     loading={loading}
                     addingToWatchlist={addingToWatchlist}
@@ -135,7 +136,12 @@ const HomePage = () => {
                                 tvShowsWatchedCount={tvShows.length}
                                 seasonsWatchedCount={tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.length || 0), 0)}
                                 episodesWatchedCount={tvShows.flatMap(show => show.seasonsWatched ?? []).reduce((acc, season) => acc + (season.watchedEpisodes?.length || 0), 0)}
+                                
                             />
+                            
+                           
+                            <YearlyProgressSection moviesByYear={moviesByYear} />
+
                             <WatchlistSection
                                 watchlist={watchlist}
                                 onRemove={handleRemoveFromWatchlist}
@@ -164,7 +170,6 @@ const HomePage = () => {
                                 onShowDetails={handleShowTVDetails}
                                 onEdit={handleEditTVShow}
                             />
-                            <YearlyProgressSection moviesByYear={moviesByYear} />
                         </div>
                     ) : null}
                 </div>

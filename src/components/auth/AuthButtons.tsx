@@ -16,7 +16,7 @@ export const AuthButtons = () => {
     return (
       <div className="flex items-center gap-4">
         <span className="text-sm font-medium text-primary hidden sm:block">
-          Welcome, {session.user.email.split('@')[0]}
+          Welcome, {session.user.email.split("@")[0]}
         </span>
         <Button
           variant="outline"

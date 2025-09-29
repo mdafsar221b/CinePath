@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { AuthButtons } from "@/components/auth/AuthButtons"; // ADDED
+import { AuthButtons } from "@/components/auth/AuthButtons"; 
 
 export const Header = () => {
   return (

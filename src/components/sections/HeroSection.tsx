@@ -1,4 +1,4 @@
-// mdafsar221b/cinepath/CinePath-cc8f03eae8d531fe279a40829543036f5e3573cd/src/components/sections/HeroSection.tsx
+
 "use client";
 
 import { motion } from "framer-motion";
@@ -28,6 +28,7 @@ interface SearchResult {
 interface HeroSectionProps {
   searchTerm: string;
   setSearchTerm: (value: string) => void;
+  setSearchResults: (value: SearchResult[]) => void; 
   searchResults: SearchResult[];
   loading: boolean;
   addingToWatchlist: string | null;
@@ -37,12 +38,13 @@ interface HeroSectionProps {
   onSelectContent: (result: SearchResult) => void;
   onAddToWatchlist: (item: SearchResult) => Promise<void>;
   isLoggedIn: boolean; 
-  loginPrompt: React.ReactNode; // ADDED
+  loginPrompt: React.ReactNode;
 }
 
 export const HeroSection = ({
   searchTerm,
   setSearchTerm,
+  setSearchResults, 
   searchResults,
   loading,
   addingToWatchlist,
@@ -52,24 +54,24 @@ export const HeroSection = ({
   onSelectContent,
   onAddToWatchlist,
   isLoggedIn, 
-  loginPrompt, // ADDED
+  loginPrompt,
 }: HeroSectionProps) => {
 
   const handleClearResults = () => {
     setSearchTerm("");
-  };
+    setSearchResults([]); 
 
   const handleAddToWatchlistAndFeedback = async (result: SearchResult) => {
     try {
       await onAddToWatchlist(result);
     } finally {
-      handleClearResults();
+      handleClearResults(); 
     }
   };
 
   const handleSelectContentAndClear = (result: SearchResult) => {
     onSelectContent(result);
-    handleClearResults();
+    handleClearResults(); 
   };
   
   return (
@@ -164,6 +166,16 @@ export const HeroSection = ({
                       </div>
                     </div>
                   ))}
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-border/50">
+                    <Button 
+                        onClick={handleClearResults} 
+                        variant="outline" 
+                        className="w-full glass-card rounded-xl"
+                    >
+                        Close Results
+                    </Button>
                 </div>
               </div>
             )}

@@ -63,13 +63,13 @@
   --radius: 0.625rem;
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --secondary: oklch(0.968 0.007 247.896);
+  --secondary: oklch(0.90 0.007 247.896); 
   --secondary-foreground: oklch(0.208 0.042 265.755);
-  --accent: oklch(0.968 0.007 247.896);
+  --accent: oklch(0.90 0.007 247.896); 
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
+  --border: oklch(0.85 0.013 255.508); 
+  --input: oklch(0.85 0.013 255.508); 
   --ring: oklch(0.704 0.04 256.788);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -88,9 +88,9 @@
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.968 0.007 247.896);
+  --primary: oklch(0.488 0.243 264.376); 
+  --primary-foreground: oklch(0.984 0.003 247.858); 
+  --muted: oklch(0.90 0.007 247.896); 
   --muted-foreground: oklch(0.554 0.046 257.417);
 }
 
@@ -101,8 +101,8 @@
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.6 0.15 250);
+  --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);
@@ -135,7 +135,7 @@
   --card-foreground: 0 0% 98%; /* White */
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
+  --primary: oklch(0.6 0.15 250);
   --primary-foreground: oklch(0.208 0.042 265.755);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
@@ -163,7 +163,7 @@
 }
 
 .landing-background {
-  background: radial-gradient(circle at center, rgba(30, 0, 50, 0.3) 0%, rgba(10, 0, 20, 0.3) 50%, rgba(0, 0, 0, 0.3) 100%);
+  background: radial-gradient(circle at center, rgba(78, 110, 204, 0.08) 0%, rgba(10, 20, 50, 0.05) 50%, rgba(0, 0, 0, 0.0) 100%);
 }
 
 @layer base {

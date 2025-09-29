@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -16,6 +15,10 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
     const [email, setEmail] = React.useState<string>("");
     const [password, setPassword] = React.useState<string>("");
+  
+    const [name, setName] = React.useState<string>("");
+    const [favoriteGenre, setFavoriteGenre] = React.useState<string>("");
+
     const [isSignUp, setIsSignUp] = React.useState<boolean>(false);
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -24,23 +27,27 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
 
         try {
             if (isSignUp) {
-                // 1. Handle Sign Up
+               
                 const signUpRes = await fetch("/api/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password }),
+                    
+                    body: JSON.stringify({ email, password, name, favoriteGenre }),
                 });
 
                 if (signUpRes.ok) {
                     alert("Account created successfully! You can now log in.");
-                    setIsSignUp(false); // Switch to login after successful sign up
+                    setIsSignUp(false); 
+                   
+                    setName("");
+                    setFavoriteGenre("");
                 } else {
                     const errorData = await signUpRes.json();
                     alert(errorData.error || "Sign up failed.");
                 }
 
             } else {
-                // 2. Handle Login
+               
                 const signInResult = await signIn("credentials", {
                     redirect: false,
                     email,
@@ -64,6 +71,26 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
     return (
         <div className={className} {...props}>
             <form onSubmit={onSubmit} className="space-y-6">
+                {/* Name Field - Only visible during Sign Up */}
+                {isSignUp && (
+                    <div className="grid gap-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input
+                            id="name"
+                            placeholder="Your Name"
+                            type="text"
+                            autoCapitalize="words"
+                            autoComplete="name"
+                            autoCorrect="off"
+                            disabled={isLoading}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="glass-card border-border/50 rounded-xl"
+                            required={isSignUp}
+                        />
+                    </div>
+                )}
+                {/* Email Field */}
                 <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -80,6 +107,7 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
                         required
                     />
                 </div>
+                {/* Password Field */}
                 <div className="grid gap-2">
                     <Label htmlFor="password">Password</Label>
                     <Input
@@ -93,6 +121,25 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
                         required
                     />
                 </div>
+                {/* Favorite Genre Field - Only visible during Sign Up */}
+                {isSignUp && (
+                    <div className="grid gap-2">
+                        <Label htmlFor="favoriteGenre">Favorite Genre (Optional)</Label>
+                        <Input
+                            id="favoriteGenre"
+                            placeholder="e.g., Sci-Fi, Thriller, Comedy"
+                            type="text"
+                            autoCapitalize="words"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            disabled={isLoading}
+                            value={favoriteGenre}
+                            onChange={(e) => setFavoriteGenre(e.target.value)}
+                            className="glass-card border-border/50 rounded-xl"
+                        />
+                    </div>
+                )}
+                
                 <Button disabled={isLoading} className="w-full">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isSignUp ? "Sign Up" : "Log In"}
@@ -102,7 +149,14 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
                 variant="outline"
                 type="button"
                 disabled={isLoading}
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    // Clear sign-up specific fields when switching modes
+                    if (isSignUp) {
+                        setName("");
+                        setFavoriteGenre("");
+                    }
+                }}
                 className="w-full mt-6 glass-card"
             >
                 {isSignUp ? "Switch to Log In" : "Switch to Sign Up"}
