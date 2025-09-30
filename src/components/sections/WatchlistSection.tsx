@@ -14,7 +14,7 @@ export const WatchlistSection = ({ watchlist, onRemove, onShowDetails, onMarkWat
   if (watchlist.length === 0) return null;
 
   return (
-    <section className="mb-16">
+    <section id="watchlist" className="mb-16">
       <h2 className="text-2xl md:text-3xl font-semibold mb-8 flex items-center gap-3">
         Watchlist
         <Badge variant="outline" className="ml-2 text-xs">

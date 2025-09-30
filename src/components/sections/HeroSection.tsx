@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import { SearchInput } from "@/components/core/SearchInput";
-import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
-import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
+
+
 
 import { DetailedContent, Movie, TVShow, WatchlistItem, SearchResult } from "@/lib/types"; 
 import { Eye, Plus } from "lucide-react";
@@ -106,46 +106,55 @@ export const HeroSection = ({
                   {searchResults.map((result) => (
                     <div
                       key={result.id}
-                      className="bg-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
+                      className="bg-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex flex-col gap-4"
                     >
-                      {result.poster_path ? (
-                        <div className="relative w-[60px] h-[90px] flex-shrink-0">
-                          <Image
-                            src={result.poster_path}
-                            alt={`${result.title} poster`}
-                            fill
-                            sizes="60px"
-                            className="rounded-lg object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[60px] h-[90px] flex-shrink-0">
-                          No Poster
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-lg truncate mb-2">{result.title}</h4>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs">
-                            {result.year}
-                          </Badge>
-                          <Badge 
-                            className={`text-xs ${
-                              result.type === 'movie' 
-                                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
-                                : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-                            }`}
-                          >
-                            {result.type === 'movie' ? 'Movie' : 'TV Show'}
-                          </Badge>
+                      <div className="flex gap-4 items-start">
+                        {result.poster_path ? (
+                          <div className="relative w-[80px] h-[120px] flex-shrink-0">
+                            <Image
+                              src={result.poster_path}
+                              alt={`${result.title} poster`}
+                              fill
+                              sizes="80px"
+                              className="rounded-lg object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[80px] h-[120px] flex-shrink-0">
+                            No Poster
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0 pt-1">
+                          <h4 className="font-semibold text-lg line-clamp-2 mb-2">{result.title}</h4>
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-xs">
+                              {result.year}
+                            </Badge>
+                            <Badge 
+                              className={`text-xs ${
+                                result.type === 'movie' 
+                                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                                  : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                              }`}
+                            >
+                              {result.type === 'movie' ? 'Movie' : 'TV Show'}
+                            </Badge>
+                            {result.imdbRating && result.imdbRating !== "N/A" && (
+                              <Badge variant="outline" className="text-xs">
+                                ⭐ {result.imdbRating}
+                              </Badge>
+                            )}
+                          </div>
+                          {result.plot && <p className="text-sm text-muted-foreground line-clamp-2 mt-2 hidden sm:block">{result.plot}</p>}
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2">
+                      
+                      <div className="flex gap-2 w-full pt-4 border-t border-border/50">
                         <Button
                           onClick={() => handleSelectContentAndClear(result)}
                           variant="outline"
                           size="sm"
-                          className="glass-card hover:bg-muted/20 transition-colors duration-300 rounded-lg"
+                          className="glass-card hover:bg-muted/20 transition-colors duration-300 rounded-lg flex-1"
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           Details
@@ -153,7 +162,7 @@ export const HeroSection = ({
                         <Button
                           onClick={() => handleAddToWatchlistAndFeedback(result)}
                           size="sm"
-                          className="transition-colors duration-300 rounded-lg"
+                          className="transition-colors duration-300 rounded-lg flex-1"
                           disabled={addingToWatchlist === result.id}
                         >
                           <Plus className="h-4 w-4 mr-2" />
@@ -175,10 +184,7 @@ export const HeroSection = ({
                 </div>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
-                <AddMovieDialog onAddMovie={onAddMovie} />
-                <AddTVShowDialog onAddTVShow={onAddTVShow} />
-            </div>
+           
           </>
         ) : (
             loginPrompt

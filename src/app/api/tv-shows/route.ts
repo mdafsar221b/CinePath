@@ -1,4 +1,5 @@
-// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/app/api/tv-shows/route.ts
+// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/app/api/tv-shows/route.ts
+
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
@@ -25,13 +26,15 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { title, poster_path, seasonsWatched, genre, plot, rating, actors, imdbRating, myRating, personalNotes, isFavorite } = body;
+        const { id, title, poster_path, seasonsWatched, genre, plot, rating, actors, imdbRating, myRating, personalNotes, isFavorite } = body;
 
+        // --- UPSERT LOGIC: Prioritize unique external ID ('id') for matching ---
+        const findQuery = id
+            ? { id, userId } // Match by unique external ID and user ID
+            : { title: { $regex: new RegExp(`^${title}$`, 'i') }, userId }; // Fallback to title regex match
+            
         // Check for existing show *for this user*
-        const existingShow = await db.collection("tv_shows").findOne({ 
-            title: { $regex: new RegExp(`^${title}$`, 'i') },
-            userId // FILTER BY userId
-        });
+        const existingShow = await db.collection("tv_shows").findOne(findQuery);
 
         if (existingShow) {
             const newSeason = seasonsWatched[0];
@@ -83,6 +86,7 @@ export async function POST(request: NextRequest) {
         } else {
             // Create new TV show
             const result = await db.collection("tv_shows").insertOne({ 
+                id, // Store the unique ID here
                 title, 
                 poster_path, 
                 seasonsWatched, 

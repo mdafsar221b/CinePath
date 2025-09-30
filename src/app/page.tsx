@@ -167,6 +167,7 @@ const HomePage = () => {
                                 totalItems={totalFilteredMovies}
                                 itemsPerPage={itemsPerPage}
                                 onSetPage={setMoviesPage}
+                                onAddMovie={handleAddMovie} // PASSED PROP
                             />
                             <TVShowSection
                                 filteredTVShows={filteredTVShows}
@@ -183,6 +184,7 @@ const HomePage = () => {
                                 totalItems={totalFilteredTVShows}
                                 itemsPerPage={itemsPerPage}
                                 onSetPage={setTvShowsPage}
+                                onAddTVShow={handleAddTVShow} // PASSED PROP
                             />
                         </div>
                     ) : null}

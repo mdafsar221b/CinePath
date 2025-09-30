@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SortSelector } from "@/components/ui/sort-selector";
 import { ChevronLeft, ChevronRight } from "lucide-react"; 
 import { Badge } from "@/components/ui/badge"; 
+import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
 
 interface MovieSectionProps {
   filteredMovies: Movie[];
@@ -21,6 +22,7 @@ interface MovieSectionProps {
   totalItems: number;
   itemsPerPage: number;
   onSetPage: (page: number) => void;
+  onAddMovie: (movie: any) => void;
 }
 
 export const MovieSection = ({
@@ -37,13 +39,14 @@ export const MovieSection = ({
   totalItems,
   itemsPerPage,
   onSetPage,
+  onAddMovie,
 }: MovieSectionProps) => {
   
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const showPagination = totalPages > 1;
 
   return (
-    <section className="mb-16">
+    <section id="movies" className="mb-16">
      
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-3">
@@ -84,9 +87,11 @@ export const MovieSection = ({
           
        
           <SortSelector value={movieSort} onValueChange={onSetMovieSort} />
+          
+          <AddMovieDialog onAddMovie={onAddMovie} />
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 lg:grid-cols-5 gap-4">
         {filteredMovies.length > 0 ? (
           filteredMovies.map((movie) => (
             <MovieCard

@@ -1,3 +1,5 @@
+// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/components/modals/AddTVShowDialog.tsx
+
 "use client";
 
 import {
@@ -22,7 +24,7 @@ interface AddTVShowDialogProps {
 
 interface SearchResult {
   id: string;
-  name: string;
+  title: string; // <-- FIXED: Use 'title' consistently
   poster_path: string | null;
 }
 
@@ -78,7 +80,8 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
       }
 
       const body = {
-        title: selectedShow.name,
+        id: selectedShow.id,
+        title: selectedShow.title, // <-- FIXED: Use 'title' from SearchResult
         poster_path: selectedShow.poster_path,
         seasonsWatched: [{ season: seasonNumber, watchedEpisodes: Array.from({ length: episodeCount }, (_, i) => i + 1) }],
         genre: showDetails?.genre || null,
@@ -103,7 +106,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
       const result = await response.json();
       console.log("TV Show added successfully:", result);
 
-      onAddTVShow(selectedShow.name, selectedShow.poster_path, [{ season: seasonNumber, watchedEpisodes: Array.from({ length: episodeCount }, (_, i) => i + 1) }]);
+      onAddTVShow(selectedShow.title, selectedShow.poster_path, [{ season: seasonNumber, watchedEpisodes: Array.from({ length: episodeCount }, (_, i) => i + 1) }]); // <-- FIXED: Use 'title'
 
       setOpen(false);
       setSearchTerm("");
@@ -181,7 +184,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                         <div className="relative w-[50px] h-[75px] flex-shrink-0">
                           <Image
                             src={show.poster_path}
-                            alt={`${show.name} poster`}
+                            alt={`${show.title} poster`} // <-- FIXED: Use 'title'
                             fill
                             sizes="50px"
                             className="rounded-lg object-cover"
@@ -193,7 +196,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                         </div>
                       )}
                       <div className="flex-1">
-                        <h4 className="font-medium">{show.name}</h4>
+                        <h4 className="font-medium">{show.title}</h4> {/* <-- FIXED: Use 'title' */}
                       </div>
                     </div>
                   ))}
@@ -216,7 +219,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                 <div className="relative w-[60px] h-[90px] flex-shrink-0">
                   <Image
                     src={selectedShow.poster_path}
-                    alt={`${selectedShow.name} poster`}
+                    alt={`${selectedShow.title} poster`} // <-- FIXED: Use 'title'
                     fill
                     sizes="60px"
                     className="rounded-lg object-cover"
@@ -227,7 +230,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                   No Poster
                 </div>
               )}
-              <h3 className="text-lg font-semibold">{selectedShow.name}</h3>
+              <h3 className="text-lg font-semibold">{selectedShow.title}</h3> {/* <-- FIXED: Use 'title' */}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

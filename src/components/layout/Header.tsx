@@ -1,4 +1,4 @@
-// src/components/layout/Header.tsx (Updated)
+// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/components/layout/Header.tsx
 
 "use client";
 
@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AuthButtons } from "@/components/auth/AuthButtons"; 
 import React from "react"; 
+import { Sidebar } from "@/components/layout/Sidebar"; // <--- UPDATED IMPORT
 
 interface HeaderProps {
   dashboardButton?: React.ReactNode; 
@@ -22,11 +23,19 @@ export const Header = ({ dashboardButton }: HeaderProps) => {
                 CinePath
               </span>
             </Link>
-            <div className="flex items-center gap-4">
-              {dashboardButton} {/* Renders the new Stats button/dialog trigger */}
+            
+            {/* Desktop Navigation (Visible sm and up) */}
+            <div className="hidden sm:flex items-center gap-4">
+              {dashboardButton} 
               <AuthButtons /> 
               <ThemeToggle />
             </div>
+            
+            {/* Mobile Navigation (Visible below sm) */}
+            <div className="sm:hidden">
+              <Sidebar dashboardButton={dashboardButton} /> {/* <--- UPDATED USAGE */}
+            </div>
+
           </div>
         </div>
       </header>

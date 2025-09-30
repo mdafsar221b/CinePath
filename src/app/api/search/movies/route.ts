@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { fetchOmdbData } from "@/lib/api-utils";
 export async function GET(request: NextRequest) {
@@ -18,22 +17,7 @@ export async function GET(request: NextRequest) {
             poster_path: item.Poster !== "N/A" ? item.Poster : null,
         })) || [];
         
-        
-        const topResultsToEnrich = movies.slice(0, 10);
-        const detailPromises = topResultsToEnrich.map((item: any) => 
-            fetchOmdbData(null, 'movie', item.id)
-                .catch(e => item)
-        );
-        
-        const enrichedResults = await Promise.allSettled(detailPromises);
-        
-        const enrichedMap = new Map(enrichedResults
-            .filter(r => r.status === 'fulfilled' && r.value?.id)
-            .map(r => [(r as PromiseFulfilledResult<any>).value.id, (r as PromiseFulfilledResult<any>).value])
-        );
-
-        movies = movies.map((item: any) => enrichedMap.get(item.id) || item);
-        
+        // Removed inefficient detail enrichment logic
 
         return NextResponse.json(movies);
     } catch (e) {

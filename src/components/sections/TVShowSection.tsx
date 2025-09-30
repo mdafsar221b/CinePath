@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
 import { ChevronLeft, ChevronRight } from "lucide-react"; 
-
+import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
 
 interface TVShowSectionProps {
   filteredTVShows: TVShow[];
@@ -22,6 +22,7 @@ interface TVShowSectionProps {
   totalItems: number;
   itemsPerPage: number;
   onSetPage: (page: number) => void;
+  onAddTVShow: (title: string, poster_path: string | null, seasonsWatched: any[]) => void; // ADDED PROP
 }
 
 export const TVShowSection = ({
@@ -38,13 +39,14 @@ export const TVShowSection = ({
   totalItems,
   itemsPerPage,
   onSetPage,
+  onAddTVShow, // DESTRUCTURED PROP
 }: TVShowSectionProps) => {
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const showPagination = totalPages > 1;
 
   return (
-    <section className="mb-16">
+    <section id="tv-shows"className="mb-16">
     
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-3">
@@ -81,9 +83,11 @@ export const TVShowSection = ({
           </div>
         
           <SortSelector value={tvShowSort} onValueChange={onSetTvShowSort} />
+          
+          <AddTVShowDialog onAddTVShow={onAddTVShow} /> {/* ADDED BUTTON HERE */}
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
         {filteredTVShows.length > 0 ? (
           filteredTVShows.map((show) => (
             <TVShowCard

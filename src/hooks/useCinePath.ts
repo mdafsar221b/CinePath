@@ -1,11 +1,13 @@
+// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/hooks/useCinePath.ts
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption } from "@/lib/types";
+import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption, SearchResult } from "@/lib/types";
 import { sortContent } from "@/lib/utils";
 import { useSession } from "next-auth/react"; 
 
-const ITEMS_PER_PAGE = 15; // Define pagination constant
+const ITEMS_PER_PAGE = 15;
 
 export const useCinePath = () => {
     const { data: session, status } = useSession(); 
@@ -16,15 +18,12 @@ export const useCinePath = () => {
     const [tvShows, setTVShows] = useState<TVShow[]>([]);
     const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
     
-    // Arrays containing content after genre filtering and sorting, but BEFORE pagination
     const [sortedMovies, setSortedMovies] = useState<Movie[]>([]);
     const [sortedTVShows, setSortedTVShows] = useState<TVShow[]>([]);
 
-    // Arrays containing content AFTER pagination slice
     const [paginatedMovies, setPaginatedMovies] = useState<Movie[]>([]);
     const [paginatedTVShows, setPaginatedTVShows] = useState<TVShow[]>([]);
     
-    // Pagination state
     const [moviesPage, setMoviesPage] = useState<number>(1);
     const [tvShowsPage, setTvShowsPage] = useState<number>(1);
 
@@ -94,7 +93,7 @@ export const useCinePath = () => {
              setTVShows([]);
              setWatchlist([]);
         }
-    }, [isLoggedIn, status]); // DEPEND ON isLoggedIn/status
+    }, [isLoggedIn, status]);
 
     // 1. Filter and Sort Movies
     useEffect(() => {
@@ -104,7 +103,7 @@ export const useCinePath = () => {
                 movie.genre && movie.genre.toLowerCase().includes(movieGenreFilter.toLowerCase())
             );
         setSortedMovies(sortContent(newSortedMovies, movieSort));
-        setMoviesPage(1); // Reset page on filter/sort change
+        setMoviesPage(1);
     }, [movies, movieGenreFilter, movieSort]);
     
     // 2. Paginate Movies
@@ -122,7 +121,7 @@ export const useCinePath = () => {
                 show.genre && show.genre.toLowerCase().includes(tvGenreFilter.toLowerCase())
             );
         setSortedTVShows(sortContent(newSortedTVShows, tvShowSort));
-        setTvShowsPage(1); // Reset page on filter/sort change
+        setTvShowsPage(1);
     }, [tvShows, tvGenreFilter, tvShowSort]);
 
     // 2. Paginate TV Shows
@@ -191,6 +190,35 @@ export const useCinePath = () => {
         }
     };
 
+    // --- NEW HELPER FUNCTION: Fetches details from API if they are missing ---
+    const fetchAndEnrichContentDetails = async (item: WatchlistItem | SearchResult) => {
+        // If it already has IMDb details (like genre and plot), skip the API call
+        if (item.genre && item.plot && item.imdbRating) {
+            return item;
+        }
+        
+        const type = item.type === 'movie' ? 'movie' : 'series';
+
+        try {
+            const detailsRes = await fetch(`/api/details?id=${item.id}&type=${type}`);
+            if (detailsRes.ok) {
+                const details = await detailsRes.json();
+                // Merge the new details while preserving the core data
+                return {
+                    ...item,
+                    ...details,
+                    id: item.id, 
+                    title: item.title,
+                };
+            }
+        } catch (error) {
+            console.error(`Failed to fetch details for ${item.title}:`, error);
+        }
+
+        return item; // Return original item on failure
+    };
+    // ------------------------------------------------------------------------
+
     const handleShowMovieDetails = async (movie: Movie) => {
         const detailedContent = {
             id: movie.id || movie._id,
@@ -232,18 +260,21 @@ export const useCinePath = () => {
     };
 
     const handleShowWatchlistDetails = async (item: WatchlistItem) => {
+        // Fetch missing details right before opening the dialog
+        const enrichedItem = await fetchAndEnrichContentDetails(item);
+
         const detailedContent: DetailedContent = {
-            id: item.id,
-            title: item.title,
-            year: parseInt(item.year || "0") || 0,
-            poster_path: item.poster_path || null,
-            genre: item.genre || "N/A",
-            plot: item.plot || "N/A",
-            rating: item.rating || "N/A",
-            actors: item.actors || "N/A",
-            director: item.director || "N/A",
-            imdbRating: item.imdbRating || "N/A",
-            type: item.type
+            id: enrichedItem.id,
+            title: enrichedItem.title,
+            year: parseInt(enrichedItem.year || "0") || 0,
+            poster_path: enrichedItem.poster_path || null,
+            genre: enrichedItem.genre || "N/A",
+            plot: enrichedItem.plot || "N/A",
+            rating: enrichedItem.rating || "N/A",
+            actors: enrichedItem.actors || "N/A",
+            director: enrichedItem.director || "N/A",
+            imdbRating: enrichedItem.imdbRating || "N/A",
+            type: enrichedItem.type
         };
         setSelectedContent(detailedContent);
         setDetailsOpen(true);
@@ -251,17 +282,22 @@ export const useCinePath = () => {
 
     const handleMarkWatched = async (item: WatchlistItem) => {
         if (!isLoggedIn) return; 
-        if (item.type === 'movie') {
+
+        // FETCH FIX: Ensure the item has all details before marking it watched
+        const enrichedItem = await fetchAndEnrichContentDetails(item);
+
+        if (enrichedItem.type === 'movie') {
             const movieData = {
-                title: item.title,
-                year: parseInt(item.year || "0"),
-                poster_path: item.poster_path,
-                genre: item.genre,
-                plot: item.plot,
-                rating: item.rating,
-                actors: item.actors,
-                director: item.director,
-                imdbRating: item.imdbRating,
+                id: enrichedItem.id,
+                title: enrichedItem.title,
+                year: parseInt(enrichedItem.year || "0"),
+                poster_path: enrichedItem.poster_path,
+                genre: enrichedItem.genre,
+                plot: enrichedItem.plot,
+                rating: enrichedItem.rating,
+                actors: enrichedItem.actors,
+                director: enrichedItem.director,
+                imdbRating: enrichedItem.imdbRating,
             };
             await fetch("/api/movies", {
                 method: "POST",
@@ -270,7 +306,23 @@ export const useCinePath = () => {
             });
             fetchMovies();
         } else {
-            alert("TV show functionality: Please add this manually for now by selecting season and episodes.");
+            const tvShowData = {
+                id: enrichedItem.id,
+                title: enrichedItem.title,
+                poster_path: enrichedItem.poster_path,
+                genre: enrichedItem.genre,
+                plot: enrichedItem.plot,
+                rating: enrichedItem.rating,
+                actors: enrichedItem.actors,
+                imdbRating: enrichedItem.imdbRating,
+                seasonsWatched: [{ season: 1, watchedEpisodes: [1] }],
+            };
+            await fetch("/api/tv-shows", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(tvShowData),
+            });
+            fetchTVShows();
         }
         await fetch(`/api/watchlist?id=${item._id}`, { method: "DELETE" });
         fetchWatchlist();
@@ -288,18 +340,21 @@ export const useCinePath = () => {
      
     const handleSelectContent = async (result: any) => {
       
+        // The result from global search is minimal, so we fetch details on selection
+        const enrichedResult = await fetchAndEnrichContentDetails(result);
+
         const contentForDetails: (DetailedContent & Partial<Movie> & Partial<TVShow>) = {
-            id: result.id,
-            title: result.title,
-            year: parseInt(result.year || "0") || 0,
-            poster_path: result.poster_path || null,
-            genre: result.genre || "N/A", 
-            plot: result.plot || "N/A",
-            rating: result.rating || "N/A",
-            actors: result.actors || "N/A",
-            director: result.director || "N/A",
-            imdbRating: result.imdbRating || "N/A",
-            type: result.type,
+            id: enrichedResult.id,
+            title: enrichedResult.title,
+            year: parseInt(enrichedResult.year || "0") || 0,
+            poster_path: enrichedResult.poster_path || null,
+            genre: enrichedResult.genre || "N/A", 
+            plot: enrichedResult.plot || "N/A",
+            rating: enrichedResult.rating || "N/A",
+            actors: enrichedResult.actors || "N/A",
+            director: (enrichedResult as any).director || "N/A",
+            imdbRating: enrichedResult.imdbRating || "N/A",
+            type: enrichedResult.type,
         };
 
         setSelectedContent(contentForDetails);
@@ -314,12 +369,15 @@ export const useCinePath = () => {
             return;
         } 
 
+        // FETCH FIX: Ensure the item has all details before saving to watchlist
+        const enrichedItem = await fetchAndEnrichContentDetails(item);
+
         try {
-            console.log("Adding to watchlist:", item);
+            console.log("Adding to watchlist:", enrichedItem);
             const res = await fetch("/api/watchlist", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(item),
+                body: JSON.stringify(enrichedItem),
             });
             const responseData = await res.json();
             console.log("Watchlist API response:", responseData);
@@ -344,16 +402,13 @@ export const useCinePath = () => {
         tvShows,
         watchlist,
         
-        // Return PAGINATED arrays to the components
         filteredMovies: paginatedMovies,
         filteredTVShows: paginatedTVShows,
         
-        // Return TOTAL sorted count for pagination controls
         totalFilteredMovies: sortedMovies.length, 
         totalFilteredTVShows: sortedTVShows.length,
         itemsPerPage: ITEMS_PER_PAGE,
         
-        // Pagination state
         moviesPage,
         setMoviesPage,
         tvShowsPage,

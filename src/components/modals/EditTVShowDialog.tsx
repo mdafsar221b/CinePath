@@ -1,3 +1,4 @@
+// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/components/modals/EditTVShowDialog.tsx
 
 "use client";
 
@@ -36,7 +37,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
 
   useEffect(() => {
     if (show) {
-     
       setMyRating(show.myRating || null);
       setPersonalNotes(show.personalNotes || "");
       setIsFavorite(show.isFavorite || false);
@@ -96,8 +96,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
     
     const existingSeason = show.seasonsWatched.find(s => s.season === newSeasonNumber);
     if (existingSeason) {
-        alert(`Season ${newSeasonNumber} is already tracked. Please use an update feature if you need to modify its episodes (currently not supported).`);
-        return;
+        // We allow the submission to continue, relying on the backend to merge episodes
     }
 
 
@@ -114,6 +113,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
             method: "POST", 
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                id: show.id, 
                 title: show.title,
                 seasonsWatched: [newWatchedSeason],
             }),
@@ -122,7 +122,31 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         if (!res.ok) throw new Error("Failed to add new season.");
         
        
-        const updatedSeasons = [...(show.seasonsWatched || []), newWatchedSeason].sort((a, b) => a.season - b.season);
+        const currentSeasons = show.seasonsWatched || [];
+        const seasonIndex = currentSeasons.findIndex(s => s.season === newSeasonNumber);
+        
+        let updatedSeasons;
+
+        if (seasonIndex !== -1) {
+             // Logic to simulate backend merge (for immediate UI update)
+            const existingEpisodes = currentSeasons[seasonIndex].watchedEpisodes;
+            const newEpisodes = newWatchedSeason.watchedEpisodes;
+            
+          
+            const mergedEpisodes = Array.from(new Set([
+                ...(existingEpisodes || []),
+                ...(newEpisodes || []) 
+            ])).sort((a, b) => a - b);
+            
+            updatedSeasons = [...currentSeasons];
+            updatedSeasons[seasonIndex] = {
+                season: newSeasonNumber,
+                watchedEpisodes: mergedEpisodes
+            };
+        } else {
+            updatedSeasons = [...currentSeasons, newWatchedSeason].sort((a, b) => a.season - b.season);
+        }
+
 
         onEditTVShow({
           ...show,
@@ -214,7 +238,10 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
 
        
         <div className="mt-4 border-t border-border/50 pt-4">
-            <h4 className="text-xl font-semibold mb-4">Add New Season</h4>
+            <h4 className="text-xl font-semibold mb-4">Add/Update Season</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+                Enter the season and the new total number of watched episodes. This will update the existing season's episode count if it exists.
+            </p>
             <form onSubmit={handleAddSeason} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -230,7 +257,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="newEpisodeCount" className="text-sm font-medium">Episodes *</Label>
+                        <Label htmlFor="newEpisodeCount" className="text-sm font-medium">Total Episodes Watched *</Label>
                         <Input
                             id="newEpisodeCount"
                             type="number"
@@ -247,7 +274,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                     className="w-full rounded-xl" 
                     disabled={loadingSeason || !newSeasonNumber || newEpisodeCount === null}
                 >
-                    {loadingSeason ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Season...</> : "Add Season"}
+                    {loadingSeason ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating Season...</> : "Add/Update Season"}
                 </Button>
             </form>
         </div>

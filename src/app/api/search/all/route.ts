@@ -1,3 +1,4 @@
+// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/app/api/search/all/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { fetchOmdbData } from "@/lib/api-utils"; 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // 1. Fetch initial search results (minimal data)
+        // Fetch initial search results (minimal data)
         const movieResults = await fetchOmdbData(query, 'movie');
         const tvResults = await fetchOmdbData(query, 'series');
 
@@ -33,26 +34,8 @@ export async function GET(request: NextRequest) {
 
         let all = [...movies, ...tvShows];
         
-       
-        const topResultsToEnrich = all.slice(0, 10);
-        const detailPromises = topResultsToEnrich.map(item => 
-            fetchOmdbData(null, item.type === 'movie' ? 'movie' : 'series', item.id)
-                .catch(e => {
-                    console.error(`Failed to enrich details for ${item.title}:`, e.message);
-                    return item; 
-                })
-        );
-        
-        const enrichedResults = await Promise.allSettled(detailPromises);
-        
-     
-        const enrichedMap = new Map(enrichedResults
-            .filter(r => r.status === 'fulfilled' && r.value?.id)
-            .map(r => [(r as PromiseFulfilledResult<any>).value.id, (r as PromiseFulfilledResult<any>).value])
-        );
+        // Removed the previous logic that fetched full details (including plot) and merged them.
 
-        all = all.map(item => enrichedMap.get(item.id) || item);
-     
         return NextResponse.json({
             movies: all.filter(item => item.type === 'movie'),
             tvShows: all.filter(item => item.type === 'tv'),

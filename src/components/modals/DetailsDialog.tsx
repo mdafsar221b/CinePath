@@ -30,19 +30,19 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
         </DialogHeader>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 w-full sm:w-auto">
             {content.poster_path ? (
-              <div className="relative overflow-hidden rounded-2xl">
+              <div className="relative overflow-hidden rounded-2xl mx-auto w-3/5 max-w-[200px] lg:w-[320px]">
                 <Image
                   src={content.poster_path}
                   alt={`${content.title} poster`}
                   width={320}
                   height={480}
-                  className="object-cover"
+                  className="object-cover w-full h-auto"
                 />
               </div>
             ) : (
-              <div className="flex h-[480px] w-[320px] items-center justify-center rounded-2xl bg-muted/20 text-center text-sm text-muted-foreground">
+              <div className="flex w-3/5 max-w-[200px] lg:w-[320px] h-[300px] mx-auto items-center justify-center rounded-2xl bg-muted/20 text-center text-sm text-muted-foreground">
                 No Poster Available
               </div>
             )}
