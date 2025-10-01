@@ -62,17 +62,17 @@ NEXTAUTH_SECRET="<A_VERY_LONG_RANDOM_SECRET_STRING>"
 OMDB_API_KEY="<YOUR_OMDB_API_KEY>"
 MONGODB_DB="cinepath"
 
----
-
-### Step 4: Run the Development Server
-Start with npm:
+----------------------------------------------------
+STEP 4: Run the Development Server
+----------------------------------------------------
+# Using npm
 npm run dev
 
-Or start with yarn:
+# Or using yarn
 yarn dev
 
----
-
-### Access the App
+----------------------------------------------------
+ACCESS THE APP
+----------------------------------------------------
 http://localhost:3000
 
