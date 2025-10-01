@@ -1,4 +1,3 @@
-// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/components/auth/AuthButtons.tsx (No change needed)
 
 "use client";
 
@@ -16,8 +15,6 @@ export const AuthButtons = () => {
 
   if (session?.user?.email) {
    
-    const rawName = session.user.name || session.user.email;
-    const displayName = rawName.split(' ')[0].split('@')[0]; 
     return (
       <div className="flex items-center gap-4">
         <UserProfileDialog />
@@ -32,5 +29,5 @@ export const AuthButtons = () => {
     );
   }
 
-  return <LoginDialog />;
+  return null;
 };

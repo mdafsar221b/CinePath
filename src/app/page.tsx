@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCinePath } from "@/hooks/useCinePath";
@@ -100,17 +101,6 @@ const HomePage = () => {
         setAddingToWatchlist(null);
     };
 
-    const loginPrompt = (
-        <div className="text-center py-12 glass-card rounded-2xl shadow-2xl transition-all duration-500 w-full">
-            <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Unlock Your Tracking Dashboard
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                Please **Log In** or **Sign Up** to access your personal movie and TV show tracking dashboard and start curating your CinePath.
-            </p>
-        </div>
-    );
-  
     const dashboardStatsButton = isLoggedIn ? (
       <StatsDashboardDialog movies={movies} tvShows={tvShows} moviesByYear={moviesByYear} />
     ) : null;
@@ -133,7 +123,6 @@ const HomePage = () => {
                     onSelectContent={handleSelectContent}
                     onAddToWatchlist={handleAddToWatchlistAndFeedback}
                     isLoggedIn={isLoggedIn}
-                    loginPrompt={isLoggedIn || isLoadingSession ? null : loginPrompt}
                 />
 
                 <div className="container mx-auto px-4 md:px-8">
@@ -162,12 +151,11 @@ const HomePage = () => {
                                 onRemove={handleRemoveMovie}
                                 onShowDetails={handleShowMovieDetails}
                                 onEdit={handleEditMovie}
-                                // Pagination props
                                 currentPage={moviesPage}
                                 totalItems={totalFilteredMovies}
                                 itemsPerPage={itemsPerPage}
                                 onSetPage={setMoviesPage}
-                                onAddMovie={handleAddMovie} // PASSED PROP
+                                onAddMovie={handleAddMovie}
                             />
                             <TVShowSection
                                 filteredTVShows={filteredTVShows}
@@ -179,12 +167,11 @@ const HomePage = () => {
                                 onRemove={handleRemoveTVShow}
                                 onShowDetails={handleShowTVDetails}
                                 onEdit={handleEditTVShow}
-                                // Pagination props
                                 currentPage={tvShowsPage}
                                 totalItems={totalFilteredTVShows}
                                 itemsPerPage={itemsPerPage}
                                 onSetPage={setTvShowsPage}
-                                onAddTVShow={handleAddTVShow} // PASSED PROP
+                                onAddTVShow={handleAddTVShow}
                             />
                         </div>
                     ) : null}

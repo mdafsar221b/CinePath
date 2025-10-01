@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -12,16 +11,25 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { UserAuthForm } from "./UserAuthForm";
+import React from "react"; 
 
-export const LoginDialog = () => {
+interface LoginDialogProps {
+    children?: React.ReactNode; 
+}
+
+export const LoginDialog = ({ children }: LoginDialogProps) => {
     const [open, setOpen] = useState(false);
+
+    const Trigger = children || (
+        <Button className="px-4 py-2 rounded-xl font-medium">
+            Log In / Sign Up
+        </Button>
+    );
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="px-4 py-2 rounded-xl font-medium">
-                    Log In / Sign Up
-                </Button>
+                {Trigger} 
             </DialogTrigger>
             <DialogContent className="glass-card border-border/50 text-foreground max-w-md rounded-2xl">
                 <DialogHeader>
