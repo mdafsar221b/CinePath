@@ -1,3 +1,5 @@
+
+
 import { TVShow, SortOption } from "@/lib/types";
 import { TVShowCard } from "@/components/core/TVShowCard";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +24,7 @@ interface TVShowSectionProps {
   totalItems: number;
   itemsPerPage: number;
   onSetPage: (page: number) => void;
-  onAddTVShow: (title: string, poster_path: string | null, seasonsWatched: any[]) => void; // ADDED PROP
+  onAddTVShow: (id: string, title: string, poster_path: string | null) => Promise<void>; 
 }
 
 export const TVShowSection = ({
@@ -39,7 +41,7 @@ export const TVShowSection = ({
   totalItems,
   itemsPerPage,
   onSetPage,
-  onAddTVShow, // DESTRUCTURED PROP
+  onAddTVShow, 
 }: TVShowSectionProps) => {
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -65,9 +67,16 @@ export const TVShowSection = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All genres</SelectItem>
-                {tvGenres.map(genre => (
-                  <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                ))}
+                {/* NEW FILTER OPTION */}
+                <SelectItem value="favorites" className="font-semibold text-red-500">
+                    Favorites
+                </SelectItem>
+                {/* Dynamically generated genres, filtering out 'favorites' which is already added */}
+                {tvGenres
+                    .filter(genre => genre !== 'favorites')
+                    .map(genre => (
+                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                    ))}
               </SelectContent>
             </Select>
             {tvGenreFilter !== "all" && (
@@ -84,7 +93,7 @@ export const TVShowSection = ({
         
           <SortSelector value={tvShowSort} onValueChange={onSetTvShowSort} />
           
-          <AddTVShowDialog onAddTVShow={onAddTVShow} /> {/* ADDED BUTTON HERE */}
+          <AddTVShowDialog onAddTVShow={onAddTVShow} /> 
         </div>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
@@ -100,7 +109,7 @@ export const TVShowSection = ({
           ))
         ) : tvGenreFilter !== "all" ? (
           <div className="text-center py-12 col-span-full glass-card rounded-2xl">
-            <p className="text-muted-foreground">No TV shows found for the selected genre.</p>
+            <p className="text-muted-foreground">No TV shows found for the selected filter.</p>
           </div>
         ) : (
           <div className="text-center py-12 col-span-full glass-card rounded-2xl">

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useCinePath } from "@/hooks/useCinePath";
@@ -69,6 +70,10 @@ const HomePage = () => {
         setMoviesPage,
         tvShowsPage,
         setTvShowsPage,
+        
+        totalEpisodesWatched, 
+        totalTVShowsTracked, 
+        totalSeasonsTracked, 
     } = useCinePath();
     const [searchTerm, setSearchTerm] = useState("");
    
@@ -102,7 +107,13 @@ const HomePage = () => {
     };
 
     const dashboardStatsButton = isLoggedIn ? (
-      <StatsDashboardDialog movies={movies} tvShows={tvShows} moviesByYear={moviesByYear} />
+      <StatsDashboardDialog 
+          movies={movies} 
+          moviesByYear={moviesByYear} 
+          totalEpisodesWatched={totalEpisodesWatched} 
+          totalTVShowsTracked={totalTVShowsTracked} 
+          totalSeasonsTracked={totalSeasonsTracked}
+      />
     ) : null;
 
 
@@ -119,7 +130,8 @@ const HomePage = () => {
                     addingToWatchlist={addingToWatchlist}
                     onSearchSubmit={handleSearch}
                     onAddMovie={handleAddMovie}
-                    onAddTVShow={handleAddTVShow}
+                    // Updated prop signature for handleAddTVShow
+                    onAddTVShow={(id, title, poster_path) => handleAddTVShow(id, title, poster_path)}
                     onSelectContent={handleSelectContent}
                     onAddToWatchlist={handleAddToWatchlistAndFeedback}
                     isLoggedIn={isLoggedIn}
@@ -171,7 +183,8 @@ const HomePage = () => {
                                 totalItems={totalFilteredTVShows}
                                 itemsPerPage={itemsPerPage}
                                 onSetPage={setTvShowsPage}
-                                onAddTVShow={handleAddTVShow}
+                               
+                                onAddTVShow={(id, title, poster_path) => handleAddTVShow(id, title, poster_path)}
                             />
                         </div>
                     ) : null}
@@ -198,4 +211,4 @@ const HomePage = () => {
     );
 };
 
-export default HomePage;
+export default HomePage; 

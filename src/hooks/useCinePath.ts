@@ -1,9 +1,9 @@
-// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/hooks/useCinePath.ts
+
 
 "use client";
 
 import { useEffect, useState } from "react";
-import { Movie, TVShow, WatchedSeason, NewMovie, DetailedContent, WatchlistItem, SortOption, SearchResult } from "@/lib/types";
+import { Movie, TVShow, NewMovie, DetailedContent, WatchlistItem, SortOption, SearchResult } from "@/lib/types";
 import { sortContent } from "@/lib/utils";
 import { useSession } from "next-auth/react"; 
 
@@ -34,7 +34,13 @@ export const useCinePath = () => {
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [editMovieOpen, setEditMovieOpen] = useState(false);
     const [editTVShowOpen, setEditTVShowOpen] = useState(false);
-    const [selectedContent, setSelectedContent] = useState<(DetailedContent & Partial<Movie> & Partial<TVShow>) | null>(null);
+    
+    // Updated type to also accommodate TVShow-specific structure data
+    const [selectedContent, setSelectedContent] = useState<(DetailedContent & Partial<Movie> & Partial<TVShow> & {
+        seriesStructure?: any; 
+        favoriteEpisodeIds?: string[];
+    }) | null>(null);
+    
     const [movieToEdit, setMovieToEdit] = useState<Movie | null>(null);
     const [tvShowToEdit, setTvShowToEdit] = useState<TVShow | null>(null);
 
@@ -53,6 +59,7 @@ export const useCinePath = () => {
         }
     };
 
+    // FIX: Enhanced fetchTVShows to enrich metadata if missing
     const fetchTVShows = async () => {
         if (!isLoggedIn) {
             setTVShows([]);
@@ -61,8 +68,34 @@ export const useCinePath = () => {
         try {
             const res = await fetch("/api/tv-shows");
             if (!res.ok) throw new Error("Failed to fetch TV shows");
-            const data = await res.json();
-            setTVShows(data);
+            const rawShows = await res.json() as TVShow[];
+            
+            // Map over shows to check and fetch missing metadata (Genre/Rating/Actors)
+            const enrichedShowsPromises = rawShows.map(async (show) => {
+                const isDetailsMissing = !show.genre || show.genre === 'N/A' || !show.actors || show.actors === 'N/A' || !show.imdbRating || show.imdbRating === 'N/A';
+                
+                if (isDetailsMissing && show.id) {
+                     try {
+                        const detailsRes = await fetch(`/api/details?id=${show.id}&type=series`);
+                        if (detailsRes.ok) {
+                            const details = await detailsRes.json();
+                            return {
+                                ...show,
+                                ...details,
+                                id: show.id, // Ensure original ID is preserved
+                            } as TVShow;
+                        }
+                     } catch (error) {
+                         // Gracefully fail enrichment, return original show
+                         console.error(`Failed to enrich details for ${show.title}:`, error);
+                     }
+                }
+                return show;
+            });
+            
+            const enrichedShows = await Promise.all(enrichedShowsPromises);
+            setTVShows(enrichedShows);
+
         } catch (e) {
             console.error("Error fetching TV shows:", e);
         }
@@ -97,11 +130,15 @@ export const useCinePath = () => {
 
     // 1. Filter and Sort Movies
     useEffect(() => {
-        let newSortedMovies = movieGenreFilter === "all"
-            ? movies
-            : movies.filter(movie =>
-                movie.genre && movie.genre.toLowerCase().includes(movieGenreFilter.toLowerCase())
+        let newSortedMovies = movies;
+        
+        // FIX: Correct genre filtering logic
+        if (movieGenreFilter !== "all") {
+            newSortedMovies = movies.filter(movie =>
+                movie.genre?.toLowerCase().includes(movieGenreFilter.toLowerCase())
             );
+        }
+            
         setSortedMovies(sortContent(newSortedMovies, movieSort));
         setMoviesPage(1);
     }, [movies, movieGenreFilter, movieSort]);
@@ -115,11 +152,18 @@ export const useCinePath = () => {
 
     // 1. Filter and Sort TV Shows
     useEffect(() => {
-        let newSortedTVShows = tvGenreFilter === "all"
-            ? tvShows
-            : tvShows.filter(show =>
-                show.genre && show.genre.toLowerCase().includes(tvGenreFilter.toLowerCase())
+        let newSortedTVShows = tvShows;
+
+        // FIX: Correct genre filtering logic and add "favorites" filter
+        if (tvGenreFilter === "favorites") {
+            newSortedTVShows = tvShows.filter(show => show.isFavorite);
+        } else if (tvGenreFilter !== "all") {
+            // FIX: Ensure 'show.genre' exists before calling toLowerCase
+            newSortedTVShows = tvShows.filter(show =>
+                show.genre?.toLowerCase().includes(tvGenreFilter.toLowerCase())
             );
+        }
+        
         setSortedTVShows(sortContent(newSortedTVShows, tvShowSort));
         setTvShowsPage(1);
     }, [tvShows, tvGenreFilter, tvShowSort]);
@@ -158,9 +202,28 @@ export const useCinePath = () => {
         fetchMovies();
     };
 
-    const handleAddTVShow = async (title: string, poster_path: string | null, seasonsWatched: WatchedSeason[]) => {
+    const handleAddTVShow = async (id: string, title: string, poster_path: string | null) => {
         if (!isLoggedIn) return; 
-        await fetchTVShows();
+         // Initial add with empty watchedEpisodeIds and favoriteEpisodeIds
+        const tvShowData = {
+            id,
+            title,
+            poster_path,
+            watchedEpisodeIds: [] as string[],
+            favoriteEpisodeIds: [] as string[],
+            totalEpisodes: 0,
+        };
+        const res = await fetch("/api/tv-shows", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(tvShowData),
+        });
+
+        if (!res.ok) {
+            console.error("Failed to add TV show:", await res.json());
+        }
+
+        fetchTVShows();
     };
 
     const handleRemoveTVShow = async (_id: string) => {
@@ -175,8 +238,14 @@ export const useCinePath = () => {
       setEditTVShowOpen(true);
     };
 
-    const handleUpdateTVShow = async () => {
+    const handleUpdateTVShow = async (updatedShow?: TVShow) => {
         if (!isLoggedIn) return; 
+        // If an updated show object is passed, update the local state to instantly reflect changes
+        if (updatedShow) {
+             setTVShows(prev => prev.map(s => s._id === updatedShow._id ? updatedShow : s));
+             setTvShowToEdit(updatedShow);
+        }
+        // Then re-fetch all shows in the background to ensure consistency
         fetchTVShows();
     };
 
@@ -240,20 +309,66 @@ export const useCinePath = () => {
     };
 
     const handleShowTVDetails = async (show: TVShow) => {
+        // NEW: Fetch base OMDb fields if missing for details dialog (Genre, Actors, IMDb Rating)
+        let enrichedShow = show;
+        const isDetailsMissing = !show.genre || show.genre === 'N/A' || !show.actors || show.actors === 'N/A' || !show.imdbRating || show.imdbRating === 'N/A';
+         
+        if (isDetailsMissing && show.id) {
+             try {
+                // Fetch generic OMDb details
+                const detailsRes = await fetch(`/api/details?id=${show.id}&type=series`);
+                if (detailsRes.ok) {
+                    const details = await detailsRes.json();
+                    
+                    // Merge details but prioritize existing personal data
+                    enrichedShow = {
+                        ...show,
+                        ...details,
+                        // Ensure we use the existing personal fields
+                        myRating: show.myRating,
+                        personalNotes: show.personalNotes,
+                        isFavorite: show.isFavorite,
+                        favoriteEpisodeIds: show.favoriteEpisodeIds,
+                        id: show.id, 
+                    };
+                }
+             } catch (error) {
+                 console.error("Error fetching missing TV show details:", error);
+             }
+         }
+        
+        // Fetch the full series structure for displaying favorite episodes (SXXEYY)
+        let seriesStructure = null;
+        if (enrichedShow.id) {
+            try {
+                const res = await fetch(`/api/details/series/${enrichedShow.id}`);
+                if (res.ok) {
+                    seriesStructure = await res.json();
+                }
+            } catch (error) {
+                console.error("Error fetching series structure for details:", error);
+            }
+        }
+        
+        // Use the fetched year if available, otherwise default to addedAt year
+        const releaseYear = (enrichedShow as any).year && (enrichedShow as any).year > 0 ? (enrichedShow as any).year : new Date(enrichedShow.addedAt).getFullYear();
+        
         const detailedContent = {
-            id: show.id || show._id,
-            title: show.title,
-            year: new Date(show.addedAt).getFullYear(),
-            poster_path: show.poster_path || null,
-            genre: show.genre || "N/A",
-            plot: show.plot || "N/A",
-            rating: show.rating || "N/A",
-            actors: show.actors || "N/A",
-            imdbRating: show.imdbRating || "N/A",
+            id: enrichedShow.id || enrichedShow._id,
+            title: enrichedShow.title,
+            year: releaseYear, 
+            poster_path: enrichedShow.poster_path || null,
+            genre: enrichedShow.genre || "N/A",
+            plot: enrichedShow.plot || "N/A",
+            rating: enrichedShow.rating || "N/A",
+            actors: enrichedShow.actors || "N/A",
+            imdbRating: enrichedShow.imdbRating || "N/A",
             type: 'tv' as 'tv',
-            myRating: show.myRating,
-            personalNotes: show.personalNotes,
-            isFavorite: show.isFavorite,
+            myRating: enrichedShow.myRating,
+            personalNotes: enrichedShow.personalNotes,
+            isFavorite: enrichedShow.isFavorite,
+            favoriteEpisodeIds: enrichedShow.favoriteEpisodeIds, 
+            seriesStructure: seriesStructure, 
         };
         setSelectedContent(detailedContent);
         setDetailsOpen(true);
@@ -306,6 +421,7 @@ export const useCinePath = () => {
             });
             fetchMovies();
         } else {
+             // For TV, add the series with empty watchedEpisodeIds
             const tvShowData = {
                 id: enrichedItem.id,
                 title: enrichedItem.title,
@@ -315,7 +431,8 @@ export const useCinePath = () => {
                 rating: enrichedItem.rating,
                 actors: enrichedItem.actors,
                 imdbRating: enrichedItem.imdbRating,
-                seasonsWatched: [{ season: 1, watchedEpisodes: [1] }],
+                watchedEpisodeIds: [] as string[], 
+                favoriteEpisodeIds: [] as string[],
             };
             await fetch("/api/tv-shows", {
                 method: "POST",
@@ -328,8 +445,12 @@ export const useCinePath = () => {
         fetchWatchlist();
     };
     
+    // NEW LOGIC: We include "favorites" as a pseudo-genre option
+    const rawTvGenres = tvShows.flatMap(show => show.genre ? show.genre.split(', ').map(g => g.trim()) : []);
+    const uniqueTvGenres = Array.from(new Set(rawTvGenres)).sort();
+    const extendedTvGenres = ['favorites', ...uniqueTvGenres];
+    
     const movieGenres = Array.from(new Set(movies.flatMap(movie => movie.genre ? movie.genre.split(', ').map(g => g.trim()) : []))).sort();
-    const tvGenres = Array.from(new Set(tvShows.flatMap(show => show.genre ? show.genre.split(', ').map(g => g.trim()) : []))).sort();
     const moviesByYear = movies.reduce((acc, movie) => {
         const year = new Date(movie.addedAt).getFullYear().toString();
         acc[year] = (acc[year] || 0) + 1;
@@ -373,14 +494,12 @@ export const useCinePath = () => {
         const enrichedItem = await fetchAndEnrichContentDetails(item);
 
         try {
-            console.log("Adding to watchlist:", enrichedItem);
             const res = await fetch("/api/watchlist", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(enrichedItem),
             });
             const responseData = await res.json();
-            console.log("Watchlist API response:", responseData);
             if (res.status === 409) {
                 alert(responseData.error);
                 return;
@@ -396,6 +515,14 @@ export const useCinePath = () => {
             alert("Failed to add to watchlist");
         }
     };
+
+    // Dashboard Stats: Pass the two accurate stats and rename stat cards.
+    const totalEpisodesWatched = tvShows.reduce((total, show) => total + (show.watchedEpisodeIds?.length || 0), 0);
+    const totalTVShowsTracked = tvShows.length;
+    
+    // FIX: Sum the new, accurately calculated trackedSeasonCount from the stored TVShow objects
+    const totalSeasonsTracked = tvShows.reduce((total, show) => total + (show.trackedSeasonCount || 0), 0);
+
 
     return {
         movies,
@@ -425,7 +552,7 @@ export const useCinePath = () => {
         movieToEdit,
         tvShowToEdit,
         movieGenres,
-        tvGenres,
+        tvGenres: extendedTvGenres, // Use extended list for TV
         moviesByYear,
         setMovieGenreFilter,
         setTvGenreFilter,
@@ -451,6 +578,9 @@ export const useCinePath = () => {
         handleSelectContent,
         handleAddToWatchlist,
         isLoggedIn, 
-        isLoadingSession 
+        isLoadingSession,
+        totalEpisodesWatched, 
+        totalTVShowsTracked, 
+        totalSeasonsTracked, 
     };
 };

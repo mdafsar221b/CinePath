@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 
 interface HeroSectionProps {
   searchTerm: string;
+  // FIX: Renamed 'onSearchChange' to 'setSearchTerm' to match usage
   setSearchTerm: (value: string) => void;
   setSearchResults: (value: SearchResult[]) => void; 
   searchResults: SearchResult[];
@@ -20,7 +21,8 @@ interface HeroSectionProps {
   addingToWatchlist: string | null;
   onSearchSubmit: (e: React.FormEvent) => void;
   onAddMovie: (movie: any) => void;
-  onAddTVShow: (title: string, poster_path: string | null, seasonsWatched: any[]) => void;
+  // Updated prop signature to match useCinePath.ts
+  onAddTVShow: (id: string, title: string, poster_path: string | null) => void;
   onSelectContent: (result: SearchResult) => void;
   onAddToWatchlist: (item: SearchResult) => Promise<void>;
   isLoggedIn: boolean; 
@@ -28,7 +30,7 @@ interface HeroSectionProps {
 
 export const HeroSection = ({
   searchTerm,
-  setSearchTerm,
+  setSearchTerm, // Now correctly defined in props interface
   setSearchResults, 
   searchResults,
   loading,
@@ -110,7 +112,7 @@ export const HeroSection = ({
         >
           <SearchInput
               searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
+              onSearchChange={setSearchTerm} // Correct usage: passing the setter function
               onSearchSubmit={onSearchSubmit}
               onClear={handleClearResults}
               loading={loading}

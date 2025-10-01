@@ -14,26 +14,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, Film, MonitorPlay, Tv2, ListVideo, Calendar } from "lucide-react";
-import { TVShow, Movie } from "@/lib/types";
+import { Movie } from "@/lib/types";
 import React from "react";
 import { useSession } from "next-auth/react"; 
 
 interface StatsDashboardDialogProps {
   movies: Movie[];
-  tvShows: TVShow[];
   moviesByYear: Record<string, number>;
+  totalEpisodesWatched: number; 
+  totalTVShowsTracked: number; 
+  totalSeasonsTracked: number; // NEW PROP
 }
 
-export const StatsDashboardDialog = ({ movies, tvShows, moviesByYear }: StatsDashboardDialogProps) => {
+export const StatsDashboardDialog = ({ movies, moviesByYear, totalEpisodesWatched, totalTVShowsTracked, totalSeasonsTracked }: StatsDashboardDialogProps) => {
   
   const { data: session } = useSession();
   const rawName = session?.user?.name || session?.user?.email || "Viewer";
   const firstName = rawName.split(' ')[0].split('@')[0];
 
   const moviesWatchedCount = movies.length;
-  const tvShowsWatchedCount = tvShows.length;
-  const seasonsWatchedCount = tvShows.reduce((acc, show) => acc + (show.seasonsWatched?.length || 0), 0);
-  const episodesWatchedCount = tvShows.flatMap(show => show.seasonsWatched ?? []).reduce((acc, season) => acc + (season.watchedEpisodes?.length || 0), 0);
+  const tvShowsTrackedCount = totalTVShowsTracked;
+  const seasonsWatchedCount = totalSeasonsTracked; // Corrected field
+  const episodesWatchedCount = totalEpisodesWatched;
   
   const sortedYears = Object.entries(moviesByYear).sort(([yearA], [yearB]) => Number(yearB) - Number(yearA));
 
@@ -89,8 +91,10 @@ export const StatsDashboardDialog = ({ movies, tvShows, moviesByYear }: StatsDas
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <StatCard title="Movies Watched" value={moviesWatchedCount} icon={<Film className="h-4 w-4 sm:h-5 sm:w-5" />} />
-              <StatCard title="TV Shows Watched" value={tvShowsWatchedCount} icon={<MonitorPlay className="h-4 w-4 sm:h-5 sm:w-5" />} />
-              <StatCard title="Seasons Watched" value={seasonsWatchedCount} icon={<Tv2 className="h-4 w-4 sm:h-5 sm:w-5" />} />
+              {/* FIX: Renamed TV Shows card title */}
+              <StatCard title="TV Shows Tracked" value={tvShowsTrackedCount} icon={<MonitorPlay className="h-4 w-4 sm:h-5 sm:w-5" />} />
+              {/* FIX: Using the more accurate Seasons Tracked count */}
+              <StatCard title="Seasons Tracked" value={seasonsWatchedCount} icon={<Tv2 className="h-4 w-4 sm:h-5 sm:w-5" />} />
               <StatCard title="Episodes Watched" value={episodesWatchedCount} icon={<ListVideo className="h-4 w-4 sm:h-5 sm:w-5" />} />
             </div>
           </div>

@@ -1,4 +1,4 @@
-// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/components/modals/EditTVShowDialog.tsx
+
 
 "use client";
 
@@ -12,12 +12,51 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
-import { TVShow, WatchedSeason } from "@/lib/types";
+import { useState, useEffect, useMemo } from "react";
+import { TVShow } from "@/lib/types"; 
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2 } from "lucide-react"; 
+import { Loader2, ChevronDown, ChevronUp, Heart } from "lucide-react"; 
+import { cn } from "@/lib/utils"; 
+
+// NOTE: Since Collapsible is not provided as a separate UI component,
+// this custom wrapper is used to provide the required functionality.
+const CollapsibleWrapper = ({ title, children, defaultOpen = false, totalEpisodes, watchedEpisodes }: { title: string, children: React.ReactNode, defaultOpen?: boolean, totalEpisodes: number, watchedEpisodes: number }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    const progress = totalEpisodes > 0 ? `${watchedEpisodes}/${totalEpisodes} Episodes` : 'Loading...';
+    return (
+        <div className="border border-border/50 rounded-xl glass-card">
+            <div 
+                className="flex justify-between items-center p-4 cursor-pointer hover:bg-muted/10 transition-colors rounded-t-xl"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <h4 className="font-semibold text-lg flex items-center gap-2">
+                    {title} 
+                    <Badge variant="outline" className="text-xs bg-muted/20 border-muted/30">{progress}</Badge>
+                </h4>
+                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+            {isOpen && (
+                <div className="p-4 border-t border-border/50 space-y-3">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+interface SeasonDetail {
+    seasonNumber: number;
+    episodes: {
+        id: string; // IMDb ID of the episode
+        title: string;
+        episodeNumber: number;
+        rating: string;
+        released: string;
+    }[];
+}
 
 interface EditTVShowDialogProps {
   open: boolean;
@@ -30,29 +69,55 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const [myRating, setMyRating] = useState<number | null>(null);
   const [personalNotes, setPersonalNotes] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
-  const [newSeasonNumber, setNewSeasonNumber] = useState<number | null>(null);
-  const [newEpisodeCount, setNewEpisodeCount] = useState<number | null>(null);
+  const [watchedIds, setWatchedIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]); 
+  
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [loadingSeason, setLoadingSeason] = useState(false);
+  const [isSavingTracking, setIsSavingTracking] = useState(false);
+  
+  const [seriesStructure, setSeriesStructure] = useState<{ totalSeasons: number; seasons: SeasonDetail[] } | null>(null);
+  const [loadingStructure, setLoadingStructure] = useState(false);
 
+  // Sync local state with prop state when dialog opens or show changes
   useEffect(() => {
     if (show) {
       setMyRating(show.myRating || null);
       setPersonalNotes(show.personalNotes || "");
       setIsFavorite(show.isFavorite || false);
+      setWatchedIds(show.watchedEpisodeIds || []);
+      setFavoriteIds(show.favoriteEpisodeIds || []); 
       
-      setNewSeasonNumber(null);
-      setNewEpisodeCount(null);
+      // Fetch full series structure when the dialog opens
+      const fetchSeriesStructure = async () => {
+        if (!show.id) return; 
+        setLoadingStructure(true);
+        try {
+            // Updated API route to get series structure
+            const res = await fetch(`/api/details/series/${show.id}`);
+            if (!res.ok) throw new Error("Failed to fetch series structure");
+            const data = await res.json();
+            setSeriesStructure(data);
+        } catch (error) {
+            console.error("Error fetching series structure:", error);
+            setSeriesStructure(null);
+        } finally {
+            setLoadingStructure(false);
+        }
+      };
+      fetchSeriesStructure();
     }
-  }, [show, open]); 
-
+  }, [show]); 
   
-  const getTotalEpisodes = (seasons: WatchedSeason[]) => {
-    return seasons.reduce((sum, season) => sum + (season.watchedEpisodes?.length || 0), 0);
-  };
-
-
-  const handleEdit = async (e: React.FormEvent) => {
+  const allEpisodeIds = useMemo(() => {
+    if (!seriesStructure) return [];
+    return seriesStructure.seasons.flatMap(s => s.episodes.map(e => e.id));
+  }, [seriesStructure]);
+  
+  const totalEpisodes = allEpisodeIds.length;
+  const totalWatched = watchedIds.length;
+  
+  // Handlers for personal details (My Rating, Notes, Favorite)
+  const handleEditDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!show) return;
 
@@ -79,94 +144,113 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         ...updatedShowPayload,
       } as TVShow);
       
-      onOpenChange(false); 
     } catch (error) {
       console.error("Error updating TV show details:", error);
     } finally {
       setLoadingDetails(false);
     }
   };
+  
+  // Handler for Episode Tracking (Batch Save)
+  const handleSaveTracking = async () => {
+    if (!show) return;
 
-  const handleAddSeason = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!show || !newSeasonNumber || newEpisodeCount === null) return;
-    if (newSeasonNumber < 1 || newEpisodeCount < 1) return;
-
-
+    setIsSavingTracking(true);
     
-    const existingSeason = show.seasonsWatched.find(s => s.season === newSeasonNumber);
-    if (existingSeason) {
-        // We allow the submission to continue, relying on the backend to merge episodes
-    }
+    // Determine if totalEpisodes needs to be updated in the DB
+    const totalEpisodesPayload = seriesStructure ? seriesStructure.seasons.flatMap(s => s.episodes).length : show.totalEpisodes;
+    
+    // NEW CALCULATION: Count how many seasons have at least one watched episode
+    const trackedSeasonCount = seriesStructure 
+        ? seriesStructure.seasons.filter(season => 
+            season.episodes.some(episode => watchedIds.includes(episode.id))
+          ).length
+        : 0;
 
-
-    setLoadingSeason(true);
-
-    const newWatchedSeason: WatchedSeason = {
-        season: newSeasonNumber,
-       
-        watchedEpisodes: Array.from({ length: newEpisodeCount }, (_, i) => i + 1)
+    const updatedShowPayload = {
+      _id: show._id,
+      watchedEpisodeIds: watchedIds, 
+      favoriteEpisodeIds: favoriteIds, 
+      totalEpisodes: totalEpisodesPayload, 
+      trackedSeasonCount: trackedSeasonCount, // NEW FIELD
     };
 
     try {
-        const res = await fetch("/api/tv-shows", {
-            method: "POST", 
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                id: show.id, 
-                title: show.title,
-                seasonsWatched: [newWatchedSeason],
-            }),
-        });
+      const res = await fetch("/api/tv-shows", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedShowPayload),
+      });
 
-        if (!res.ok) throw new Error("Failed to add new season.");
-        
-       
-        const currentSeasons = show.seasonsWatched || [];
-        const seasonIndex = currentSeasons.findIndex(s => s.season === newSeasonNumber);
-        
-        let updatedSeasons;
+      if (!res.ok) throw new Error("Failed to update TV show tracking.");
 
-        if (seasonIndex !== -1) {
-             // Logic to simulate backend merge (for immediate UI update)
-            const existingEpisodes = currentSeasons[seasonIndex].watchedEpisodes;
-            const newEpisodes = newWatchedSeason.watchedEpisodes;
-            
-          
-            const mergedEpisodes = Array.from(new Set([
-                ...(existingEpisodes || []),
-                ...(newEpisodes || []) 
-            ])).sort((a, b) => a - b);
-            
-            updatedSeasons = [...currentSeasons];
-            updatedSeasons[seasonIndex] = {
-                season: newSeasonNumber,
-                watchedEpisodes: mergedEpisodes
-            };
-        } else {
-            updatedSeasons = [...currentSeasons, newWatchedSeason].sort((a, b) => a.season - b.season);
-        }
-
-
-        onEditTVShow({
-          ...show,
-          seasonsWatched: updatedSeasons
-        });
-        
-       
-        setNewSeasonNumber(null);
-        setNewEpisodeCount(null);
+      // Update the parent state immediately
+      const updatedShow = {
+        ...show,
+        ...updatedShowPayload, 
+      } as TVShow;
+      onEditTVShow(updatedShow);
+      
+      alert("Episode progress saved!");
+      
     } catch (error) {
-        console.error("Error adding new season:", error);
+      console.error("Error saving episode tracking:", error);
+      alert("Failed to save episode progress.");
     } finally {
-        setLoadingSeason(false);
+      setIsSavingTracking(false);
+    }
+  };
+
+  const handleEpisodeCheck = (episodeId: string, checked: boolean) => {
+    setWatchedIds(prev => {
+        if (checked) {
+            // Add if not present
+            return Array.from(new Set([...prev, episodeId]));
+        } else {
+            // Remove if present
+            return prev.filter(id => id !== episodeId);
+        }
+    });
+  };
+  
+  // Handler for marking an episode as favorite
+  const handleFavoriteCheck = (episodeId: string, checked: boolean) => {
+    setFavoriteIds(prev => {
+        if (checked) {
+            return Array.from(new Set([...prev, episodeId]));
+        } else {
+            return prev.filter(id => id !== episodeId);
+        }
+    });
+  };
+
+  const handleSeasonCheck = (season: SeasonDetail, checked: boolean) => {
+    const seasonEpisodeIds = season.episodes.map(e => e.id);
+    setWatchedIds(prev => {
+        let newIds = new Set(prev);
+        if (checked) {
+            seasonEpisodeIds.forEach(id => newIds.add(id));
+        } else {
+            seasonEpisodeIds.forEach(id => newIds.delete(id));
+        }
+        return Array.from(newIds);
+    });
+  };
+  
+  const handleMarkAllCheck = (checked: boolean) => {
+    if (checked) {
+      setWatchedIds(allEpisodeIds);
+    } else {
+      setWatchedIds([]);
     }
   };
 
 
   if (!show) return null;
   
-  const totalEpisodes = getTotalEpisodes(show.seasonsWatched);
+  const totalSeasonsCount = seriesStructure?.totalSeasons || 0; 
+  const allChecked = totalEpisodes > 0 && totalWatched === totalEpisodes;
+  const isIndeterminate = totalWatched > 0 && totalWatched < totalEpisodes;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,19 +259,20 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Edit {show.title}</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Update your personal details for this TV show and track seasons.
+            Update your personal details and track episode progress.
           </DialogDescription>
         </DialogHeader>
 
        
-        <form onSubmit={handleEdit} className="space-y-6">
+        <form onSubmit={handleEditDetails} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="myRating" className="text-sm font-medium">My Rating (1-10)</Label>
             <Input
               id="myRating"
               type="number"
               value={myRating ?? ""}
-              onChange={(e) => setMyRating(Number(e.target.value))}
+              // FIX: Handle empty string explicitly to set state to null, preventing saving 0 unintentionally.
+              onChange={(e) => setMyRating(e.target.value === "" ? null : Number(e.target.value))}
               className="glass-card border-border/50 rounded-xl"
               min="1"
               max="10"
@@ -216,19 +301,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                 Mark as Favorite
               </Label>
             </div>
-          <div className="space-y-2">
-            <h4 className="text-sm font-semibold">Watched Seasons:</h4>
-            <div className="flex flex-wrap gap-2">
-               
-                {show.seasonsWatched.sort((a, b) => a.season - b.season).map(season => (
-                    <Badge key={season.season} variant="outline" className="text-sm bg-primary/10 text-primary border-primary/20">
-                        S{season.season}: {season.watchedEpisodes?.length || 0} Episodes
-                    </Badge>
-                ))}
-                {show.seasonsWatched.length === 0 && <p className="text-muted-foreground text-sm">No seasons tracked yet.</p>}
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">Total Watched: {show.seasonsWatched.length} Seasons, {totalEpisodes} Episodes</p>
-          </div>
           <div className="flex gap-3 pt-4">
             <Button type="submit" className="flex-1 rounded-xl" disabled={loadingDetails}>
               {loadingDetails ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Personal Details"}
@@ -238,45 +310,124 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
 
        
         <div className="mt-4 border-t border-border/50 pt-4">
-            <h4 className="text-xl font-semibold mb-4">Add/Update Season</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-                Enter the season and the new total number of watched episodes. This will update the existing season's episode count if it exists.
-            </p>
-            <form onSubmit={handleAddSeason} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="newSeasonNumber" className="text-sm font-medium">Season *</Label>
-                        <Input
-                            id="newSeasonNumber"
-                            type="number"
-                            value={newSeasonNumber ?? ""}
-                            onChange={(e) => setNewSeasonNumber(Number(e.target.value))}
-                            className="glass-card border-border/50 rounded-xl"
-                            min="1"
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="newEpisodeCount" className="text-sm font-medium">Total Episodes Watched *</Label>
-                        <Input
-                            id="newEpisodeCount"
-                            type="number"
-                            value={newEpisodeCount ?? ""}
-                            onChange={(e) => setNewEpisodeCount(Number(e.target.value))}
-                            className="glass-card border-border/50 rounded-xl"
-                            min="1"
-                            required
-                        />
-                    </div>
+            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">Episode Tracking</h4>
+            
+            {loadingStructure ? (
+                <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                    <p className="mt-4 text-muted-foreground">Fetching series structure...</p>
                 </div>
-                <Button 
-                    type="submit" 
-                    className="w-full rounded-xl" 
-                    disabled={loadingSeason || !newSeasonNumber || newEpisodeCount === null}
-                >
-                    {loadingSeason ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating Season...</> : "Add/Update Season"}
-                </Button>
-            </form>
+            ) : seriesStructure && totalSeasonsCount > 0 ? (
+                <>
+                  <div className="flex justify-between items-center mb-4 p-4 glass-card rounded-xl border border-primary/20 bg-primary/5">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Total Progress</p>
+                        <p className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                            {totalWatched} / {totalEpisodes}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="mark-all"
+                            checked={allChecked}
+                            onCheckedChange={handleMarkAllCheck}
+                            disabled={totalEpisodes === 0}
+                            className={cn(isIndeterminate && "data-[state=unchecked]:bg-primary")}
+                          />
+                          <Label htmlFor="mark-all" className="text-sm font-medium">
+                            {isIndeterminate ? "Mark All Unwatched" : "Mark All Watched"}
+                          </Label>
+                        </div>
+                        <Button 
+                            onClick={handleSaveTracking} 
+                            disabled={isSavingTracking || totalEpisodes === 0}
+                            className="text-sm py-2 h-auto"
+                        >
+                            {isSavingTracking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Progress...</> : "Save Episode Progress"}
+                        </Button>
+                      </div>
+                  </div>
+                  
+                  <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                    {seriesStructure.seasons.map(season => {
+                        const seasonIds = season.episodes.map(e => e.id);
+                        const watchedInSeason = seasonIds.filter(id => watchedIds.includes(id)).length;
+                        const seasonAllChecked = watchedInSeason === season.episodes.length && season.episodes.length > 0;
+                        
+                        return (
+                            <CollapsibleWrapper
+                                key={season.seasonNumber}
+                                title={`Season ${season.seasonNumber}`}
+                                totalEpisodes={season.episodes.length}
+                                watchedEpisodes={watchedInSeason}
+                                defaultOpen={watchedInSeason > 0 && watchedInSeason < season.episodes.length} // Open partially watched seasons
+                            >
+                                <div className="flex justify-between items-center pb-2 border-b border-border/50 mb-3">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`season-${season.seasonNumber}-all`}
+                                      checked={seasonAllChecked}
+                                      onCheckedChange={(checked) => handleSeasonCheck(season, checked === true)}
+                                      className={cn(watchedInSeason > 0 && !seasonAllChecked && "data-[state=unchecked]:bg-primary")}
+                                      disabled={season.episodes.length === 0}
+                                    />
+                                    <Label htmlFor={`season-${season.seasonNumber}-all`} className="text-sm font-semibold">
+                                      {seasonAllChecked ? "Unmark All Episodes" : "Mark All Episodes"}
+                                    </Label>
+                                  </div>
+                                </div>
+                                
+                                {season.episodes.map(episode => (
+                                    <div key={episode.id} className="flex items-center space-x-3 hover:bg-muted/10 p-2 rounded-lg transition-colors">
+                                        <Checkbox
+                                            id={episode.id}
+                                            checked={watchedIds.includes(episode.id)}
+                                            onCheckedChange={(checked) => handleEpisodeCheck(episode.id, checked === true)}
+                                        />
+                                        <Label htmlFor={episode.id} className="text-sm flex-1 cursor-pointer">
+                                            E{episode.episodeNumber}: {episode.title}
+                                        </Label>
+                                        
+                                        {/* NEW: Favorite Toggle */}
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleFavoriteCheck(episode.id, !favoriteIds.includes(episode.id))}
+                                            className={cn(
+                                                "rounded-full h-8 w-8 text-muted-foreground",
+                                                favoriteIds.includes(episode.id) ? "text-red-500 hover:bg-red-500/10" : "hover:bg-muted/30"
+                                            )}
+                                        >
+                                            <Heart className={cn("h-4 w-4", favoriteIds.includes(episode.id) && "fill-red-500")} />
+                                        </Button>
+
+                                        <Badge variant="outline" className="text-xs bg-muted/20 border-muted/30">
+                                            ⭐ {episode.rating}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </CollapsibleWrapper>
+                        );
+                    })}
+                  </div>
+                  
+                  <div className="pt-4">
+                      <Button 
+                          onClick={handleSaveTracking} 
+                          disabled={isSavingTracking || totalEpisodes === 0}
+                          className="w-full"
+                      >
+                            {isSavingTracking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Progress...</> : "Save Episode Progress"}
+                      </Button>
+                  </div>
+                </>
+            ) : (
+                <div className="text-center py-8">
+                    <p className="text-muted-foreground">Could not fetch series information or it has no seasons.</p>
+                </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>

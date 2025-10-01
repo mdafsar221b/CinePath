@@ -10,23 +10,6 @@
 
 ***
 
-## ✨ Detailed Features
-
-CinePath has been enhanced for reliability, performance, and user experience throughout development.
-
-### 🎬 Core Tracking & Data Integrity
-* **Robust TV Show Merging:** Implements sophisticated upsert logic using IMDb IDs to correctly merge new seasons and episodes into an existing TV show record, preventing duplicates and ensuring accurate season tracking.
-* **Optimized Global Search:** Integrates the OMDb API for fast searching. Results return minimal data initially for speed, with full details fetched only when needed.
-* **Watchlist Management:** Easily add content to your watchlist and seamlessly transition an item to your "Watched" lists.
-* **Personalization:** Users can add personal ratings (1-10), write private notes, and mark content as a favorite.
-
-### 📊 User Interface & Navigation
-* **Personal Dashboard:** A dedicated modal displays comprehensive viewing statistics, including totals for all tracked media and yearly movie consumption breakdowns.
-* **Responsive Sidebar:** A full-height, sliding sidebar provides centralized, intuitive navigation on mobile devices.
-* **Filtering, Sorting & Pagination:** Efficiently manage large collections with genre filtering, multi-criteria sorting (rating, date added, title), and client-side pagination.
-
-***
-
 ## 📸 Screenshots
 
 The following images showcase the application's current design and functionality across desktop and mobile views. *Note: Images are referenced from the repository's `/public` folder.*
@@ -39,23 +22,57 @@ The following images showcase the application's current design and functionality
 | **TV Shows Watched List** | List view of tracked TV shows showing season/episode counts. | ![Desktop TV Shows Watched List](public/Screenshot%202025-10-01%20004817.png) |
 | **Dashboard Stats** | The modal showing viewing statistics and consumption totals. | ![Desktop Dashboard Statistics](public/Screenshot%202025-10-01%20004837.png) |
 
-### Mobile View (Four Column Gallery)
+### Mobile View
 | Landing Page | Tv Show Watched | Sidebar | Movies Watched |
 | :---: | :---: | :---: | :---: |
 | **Landing & Search** | **Tv-Show List** | **Full Sidebar Drawer** | **Movies List** |
 | ![Mobile Landing Page](public/Screenshot%202025-10-01%20004904.png) | ![Mobile Movies Watched List](public/Screenshot%202025-10-01%20005004.png) | ![Mobile TV Shows Watched List](public/Screenshot%202025-10-01%20005038.png) | ![Mobile Sidebar Menu](public/Screenshot%202025-10-01%20004952.png) |
 
 ***
-
 ## 🛠️ Installation Guide
 
 ### Prerequisites
-1.  **Node.js (>= 18.17.0)**
-2.  **MongoDB:** A connection string for a MongoDB instance.
-3.  **OMDb API Key:** Obtain a free key from [OMDb API](http://www.omdbapi.com/) for content searching.
+- Node.js (>= 18.17.0)
+- MongoDB: A connection string for a MongoDB instance
+- OMDb API Key: Obtain a free key from http://www.omdbapi.com/ for content searching.
+
+---
 
 ### Step 1: Clone the repository
-
-```bash
-git clone [INSERT REPO URL HERE]
+git clone https://github.com/mdafsar221b/CinePath
 cd cinepath
+
+---
+
+### Step 2: Install Dependencies
+Install using npm:
+npm install
+
+Or install using yarn:
+yarn install
+
+---
+
+### Step 3: Set Up Environment Variables
+Create a .env.local file in the root directory (this file is ignored by Git).
+
+Example:
+MONGODB_URI="<YOUR_MONGO_CONNECTION_STRING>"
+NEXTAUTH_SECRET="<A_VERY_LONG_RANDOM_SECRET_STRING>"
+OMDB_API_KEY="<YOUR_OMDB_API_KEY>"
+MONGODB_DB="cinepath"
+
+---
+
+### Step 4: Run the Development Server
+Start with npm:
+npm run dev
+
+Or start with yarn:
+yarn dev
+
+---
+
+### Access the App
+http://localhost:3000
+

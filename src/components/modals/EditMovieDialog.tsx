@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -78,7 +79,8 @@ export const EditMovieDialog = ({ open, onOpenChange, movie, onEditMovie }: Edit
               id="myRating"
               type="number"
               value={myRating ?? ""}
-              onChange={(e) => setMyRating(Number(e.target.value))}
+           
+              onChange={(e) => setMyRating(e.target.value === "" ? null : Number(e.target.value))}
               className="glass-card border-border/50 rounded-xl"
               min="1"
               max="10"

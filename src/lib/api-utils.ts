@@ -1,5 +1,3 @@
-
-
 import { NextResponse } from "next/server";
 
 export function handleServerError(message: string, error: unknown) {
@@ -11,7 +9,6 @@ export function handleClientError(message: string, status: number) {
     return NextResponse.json({ error: message }, { status });
 }
 
-
 const detailCache = new Map<string, { data: any, expiry: number }>();
 const CACHE_TTL = 3600000; //
 
@@ -20,7 +17,6 @@ async function fetchAndCacheOmdbDetails(id: string, apiKey: string) {
     const now = Date.now();
 
     if (cachedItem && cachedItem.expiry > now) {
-        // console.log(`[Cache] HIT for ID: ${id}`);
         return cachedItem.data;
     }
 
@@ -36,7 +32,6 @@ async function fetchAndCacheOmdbDetails(id: string, apiKey: string) {
         throw new Error(data.Error);
     }
     
-    // Process and map the raw OMDb data to a cleaner structure
     const itemToCache = {
         id: data.imdbID,
         title: data.Title,
@@ -51,13 +46,57 @@ async function fetchAndCacheOmdbDetails(id: string, apiKey: string) {
         type: data.Type === 'series' ? 'tv' : 'movie'
     };
     
-    // Cache the processed data
     detailCache.set(id, { data: itemToCache, expiry: now + CACHE_TTL });
     
     
     return itemToCache;
 }
 // ------------------------------------
+
+// NEW: Function to fetch all season/episode data for a series
+export async function fetchOmdbSeriesStructure(id: string, apiKey: string) {
+    // 1. Get total seasons (using the first API call structure)
+    const summaryUrl = `http://www.omdbapi.com/?apikey=${apiKey}&i=${id}`;
+    const summaryResponse = await fetch(summaryUrl);
+    if (!summaryResponse.ok) {
+        throw new Error(`Summary API call failed with status: ${summaryResponse.status}`);
+    }
+    const summaryData = await summaryResponse.json();
+
+    if (summaryData.Response === "False") {
+        throw new Error(summaryData.Error || "Series not found for summary.");
+    }
+
+    const totalSeasons = parseInt(summaryData.totalSeasons || "0");
+    if (totalSeasons === 0) {
+        return { totalSeasons: 0, seasons: [] };
+    }
+
+    // 2. Loop for each season to get episodes
+    const seasonPromises = [];
+    for (let i = 1; i <= totalSeasons; i++) {
+        const seasonUrl = `http://www.omdbapi.com/?apikey=${apiKey}&i=${id}&season=${i}`;
+        seasonPromises.push(fetch(seasonUrl).then(res => {
+            if (!res.ok) throw new Error(`Season ${i} API call failed with status: ${res.status}`);
+            return res.json();
+        }));
+    }
+
+    const seasonResponses = await Promise.all(seasonPromises);
+
+    const seasons = seasonResponses.map(data => ({
+        season: parseInt(data.Season),
+        episodes: (data.Episodes || []).map((ep: any) => ({
+            id: ep.imdbID,
+            title: ep.Title,
+            episode: ep.Episode,
+            rating: ep.imdbRating,
+            released: ep.Released,
+        }))
+    }));
+
+    return { totalSeasons, seasons: seasons.sort((a, b) => a.season - b.season) };
+}
 
 
 export async function fetchOmdbData(query: string | null, type: 'movie' | 'series' | null = null, id: string | null = null) {

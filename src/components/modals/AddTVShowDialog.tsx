@@ -1,5 +1,3 @@
-// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/components/modals/AddTVShowDialog.tsx
-
 "use client";
 
 import {
@@ -12,19 +10,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { WatchedSeason } from "@/lib/types";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 interface AddTVShowDialogProps {
-  onAddTVShow: (title: string, poster_path: string | null, seasonsWatched: WatchedSeason[]) => void;
+  onAddTVShow: (id: string, title: string, poster_path: string | null) => Promise<void>;
 }
 
 interface SearchResult {
   id: string;
-  title: string; // <-- FIXED: Use 'title' consistently
+  title: string; 
   poster_path: string | null;
 }
 
@@ -32,11 +28,8 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [selectedShow, setSelectedShow] = useState<SearchResult | null>(null);
-  const [seasonNumber, setSeasonNumber] = useState<number | null>(null);
-  const [episodeCount, setEpisodeCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [adding, setAdding] = useState(false);
+  const [addingId, setAddingId] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,14 +37,12 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
 
     setLoading(true);
     setResults([]);
-    setSelectedShow(null);
     try {
       const res = await fetch(`/api/search/tv-shows?query=${encodeURIComponent(searchTerm)}`);
       if (!res.ok) {
         throw new Error("Failed to fetch search results");
       }
       const data = await res.json();
-      console.log("TV Search Results:", data);
       setResults(data);
     } catch (e) {
       console.error("Search error:", e);
@@ -61,64 +52,23 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     }
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedShow || !seasonNumber || episodeCount === null) return;
-
-    setAdding(true);
+  const handleAdd = async (show: SearchResult) => {
+    setAddingId(show.id);
     try {
-      let showDetails = null;
-
-      try {
-        const detailsRes = await fetch(`/api/details?id=${selectedShow.id}&type=series`);
-        if (detailsRes.ok) {
-          showDetails = await detailsRes.json();
-          console.log("TV Show Details:", showDetails);
-        }
-      } catch (error) {
-        console.log("Could not fetch details, using basic info");
-      }
-
-      const body = {
-        id: selectedShow.id,
-        title: selectedShow.title, // <-- FIXED: Use 'title' from SearchResult
-        poster_path: selectedShow.poster_path,
-        seasonsWatched: [{ season: seasonNumber, watchedEpisodes: Array.from({ length: episodeCount }, (_, i) => i + 1) }],
-        genre: showDetails?.genre || null,
-        plot: showDetails?.plot || null,
-        rating: showDetails?.rating || null,
-        actors: showDetails?.actors || null,
-        imdbRating: showDetails?.imdbRating || null,
-      };
-
-      console.log("Adding TV Show with data:", body);
-
-      const response = await fetch("/api/tv-shows", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add TV show");
-      }
-
-      const result = await response.json();
-      console.log("TV Show added successfully:", result);
-
-      onAddTVShow(selectedShow.title, selectedShow.poster_path, [{ season: seasonNumber, watchedEpisodes: Array.from({ length: episodeCount }, (_, i) => i + 1) }]); // <-- FIXED: Use 'title'
+    
+      await onAddTVShow(show.id, show.title, show.poster_path);
+      
+      alert(`${show.title} added! You can now edit it to track episodes.`);
 
       setOpen(false);
       setSearchTerm("");
       setResults([]);
-      setSelectedShow(null);
-      setSeasonNumber(null);
-      setEpisodeCount(null);
 
     } catch (error) {
       console.error("Error adding TV show:", error);
+      alert("Failed to add TV show.");
     } finally {
-      setAdding(false);
+      setAddingId(null);
     }
   };
 
@@ -127,9 +77,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     if (!isOpen) {
       setSearchTerm("");
       setResults([]);
-      setSelectedShow(null);
-      setSeasonNumber(null);
-      setEpisodeCount(null);
+      setAddingId(null);
     }
   };
 
@@ -148,141 +96,69 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
         <DialogHeader>
           <DialogTitle id="add-tv-show-title" className="text-xl font-semibold">Add TV Show</DialogTitle>
           <DialogDescription id="add-tv-show-description" className="text-muted-foreground">
-            Search for a TV show and add the seasons you've watched.
+            Search for a TV show to add it to your watched list.
           </DialogDescription>
         </DialogHeader>
 
-        {!selectedShow ? (
-          <>
-            <form onSubmit={handleSearch} className="flex gap-3">
-              <Input
-                id="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 glass-card border-border/50 rounded-xl"
-                placeholder="Search for a TV show..."
-              />
-              <Button type="submit" size="icon" disabled={loading} className="rounded-xl">
-                <Search className="w-4 h-4" />
-              </Button>
-            </form>
-            <div className="mt-6 max-h-[400px] overflow-y-auto">
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                  <p className="text-muted-foreground">Searching...</p>
-                </div>
-              ) : results.length > 0 ? (
-                <div className="space-y-3">
-                  {results.map((show) => (
-                    <div
-                      key={show.id}
-                      className="glass-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 cursor-pointer flex items-center gap-4"
-                      onClick={() => setSelectedShow(show)}
-                    >
-                      {show.poster_path ? (
-                        <div className="relative w-[50px] h-[75px] flex-shrink-0">
-                          <Image
-                            src={show.poster_path}
-                            alt={`${show.title} poster`} // <-- FIXED: Use 'title'
-                            fill
-                            sizes="50px"
-                            className="rounded-lg object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[50px] h-[75px] flex-shrink-0">
-                          No Poster
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h4 className="font-medium">{show.title}</h4> {/* <-- FIXED: Use 'title' */}
+        <form onSubmit={handleSearch} className="flex gap-3">
+            <Input
+              id="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 glass-card border-border/50 rounded-xl"
+              placeholder="Search for a TV show..."
+            />
+            <Button type="submit" size="icon" disabled={loading} className="rounded-xl">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            </Button>
+        </form>
+        
+        <div className="mt-2 max-h-[400px] overflow-y-auto">
+            {results.length > 0 ? (
+              <div className="space-y-3">
+                {results.map((show) => (
+                  <div
+                    key={show.id}
+                    className="glass-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
+                  >
+                    {show.poster_path ? (
+                      <div className="relative w-[50px] h-[75px] flex-shrink-0">
+                        <Image
+                          src={show.poster_path}
+                          alt={`${show.title} poster`} 
+                          fill
+                          sizes="50px"
+                          className="rounded-lg object-cover"
+                        />
                       </div>
+                    ) : (
+                      <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[50px] h-[75px] flex-shrink-0">
+                        No Poster
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h4 className="font-medium">{show.title}</h4>
                     </div>
-                  ))}
-                </div>
-              ) : searchTerm && !loading ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No results found.</p>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Start typing to search for a TV show.</p>
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <form onSubmit={handleAdd} className="space-y-6">
-            <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-              {selectedShow.poster_path ? (
-                <div className="relative w-[60px] h-[90px] flex-shrink-0">
-                  <Image
-                    src={selectedShow.poster_path}
-                    alt={`${selectedShow.title} poster`} // <-- FIXED: Use 'title'
-                    fill
-                    sizes="60px"
-                    className="rounded-lg object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center rounded-lg bg-muted/20 text-center text-xs text-muted-foreground w-[60px] h-[90px] flex-shrink-0">
-                  No Poster
-                </div>
-              )}
-              <h3 className="text-lg font-semibold">{selectedShow.title}</h3> {/* <-- FIXED: Use 'title' */}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="season" className="text-sm font-medium">
-                  Season *
-                </Label>
-                <Input
-                  id="season"
-                  type="number"
-                  value={seasonNumber ?? ""}
-                  onChange={(e) => setSeasonNumber(Number(e.target.value))}
-                  className="glass-card border-border/50 rounded-xl"
-                  min="1"
-                  required
-                />
+                    <Button
+                        onClick={() => handleAdd(show)}
+                        disabled={addingId === show.id}
+                        className="rounded-lg"
+                    >
+                        {addingId === show.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Add"}
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="episodes" className="text-sm font-medium">
-                  Episodes *
-                </Label>
-                <Input
-                  id="episodes"
-                  type="number"
-                  value={episodeCount ?? ""}
-                  onChange={(e) => setEpisodeCount(Number(e.target.value))}
-                  className="glass-card border-border/50 rounded-xl"
-                  min="1"
-                  required
-                />
+            ) : searchTerm && !loading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No results found.</p>
               </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSelectedShow(null)}
-                className="flex-1 glass-card rounded-xl"
-              >
-                Back to Search
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 rounded-xl"
-                disabled={adding || !seasonNumber || episodeCount === null}
-              >
-                {adding ? "Adding..." : "Add TV Show"}
-              </Button>
-            </div>
-          </form>
-        )}
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Start typing to search for a TV show.</p>
+              </div>
+            )}
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,4 +1,3 @@
-// mdafsar221b/cinepath/CinePath-8b5b9760d0bd1328fe99387f613f7cf7af56ed45/src/app/api/tv-shows/route.ts
 
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
@@ -26,80 +25,75 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { id, title, poster_path, seasonsWatched, genre, plot, rating, actors, imdbRating, myRating, personalNotes, isFavorite } = body;
+        
+        const { 
+            id, 
+            title, 
+            poster_path, 
+            watchedEpisodeIds = [], 
+            favoriteEpisodeIds = [], 
+            totalEpisodes, 
+            trackedSeasonCount, 
+            genre, 
+            plot, 
+            rating, 
+            actors, 
+            imdbRating, 
+            myRating, 
+            personalNotes, 
+            isFavorite 
+        } = body;
 
-        // --- UPSERT LOGIC: Prioritize unique external ID ('id') for matching ---
-        const findQuery = id
-            ? { id, userId } // Match by unique external ID and user ID
-            : { title: { $regex: new RegExp(`^${title}$`, 'i') }, userId }; // Fallback to title regex match
-            
-        // Check for existing show *for this user*
+        if (!id) {
+            return NextResponse.json({ error: "TV Show requires a unique ID." }, { status: 400 });
+        }
+
+        const findQuery = { id, userId };
         const existingShow = await db.collection("tv_shows").findOne(findQuery);
 
-        if (existingShow) {
-            const newSeason = seasonsWatched[0];
-            const seasonIndex = existingShow.seasonsWatched.findIndex((s: any) => s.season === newSeason.season);
+        const updateFields = {
+            title, 
+            poster_path, 
+            genre,
+            plot,
+            rating,
+            actors,
+            imdbRating,
+            ...(totalEpisodes !== undefined && { totalEpisodes }), 
+            ...(trackedSeasonCount !== undefined && { trackedSeasonCount }),
+            ...(myRating !== undefined && { myRating }),
+            ...(personalNotes !== undefined && { personalNotes }),
+            isFavorite: isFavorite !== undefined ? isFavorite : existingShow?.isFavorite || false,
+        };
 
-            if (seasonIndex !== -1) {
-                // Update existing season's watched episodes
-                const updatedSeasons = [...existingShow.seasonsWatched];
-                updatedSeasons[seasonIndex] = {
-                    ...updatedSeasons[seasonIndex],
-                    watchedEpisodes: [...new Set([...updatedSeasons[seasonIndex].watchedEpisodes, ...newSeason.watchedEpisodes])]
-                };
-                await db.collection("tv_shows").updateOne(
-                    { _id: existingShow._id, userId }, // FILTER BY userId
-                    { 
-                        $set: { 
-                            seasonsWatched: updatedSeasons,
-                            ...(genre && { genre }),
-                            ...(plot && { plot }),
-                            ...(rating && { rating }),
-                            ...(actors && { actors }),
-                            ...(imdbRating && { imdbRating }),
-                            ...(myRating && { myRating }),
-                            ...(personalNotes && { personalNotes }),
-                            isFavorite: isFavorite !== undefined ? isFavorite : existingShow.isFavorite,
-                        }
+        if (existingShow) {
+          
+            const existingWatchedIds = existingShow.watchedEpisodeIds || [];
+            const mergedWatchedIds = Array.from(new Set([...existingWatchedIds, ...watchedEpisodeIds]));
+            
+            const existingFavoriteIds = existingShow.favoriteEpisodeIds || []; 
+            const mergedFavoriteIds = Array.from(new Set([...existingFavoriteIds, ...favoriteEpisodeIds])); 
+
+            await db.collection("tv_shows").updateOne(
+                { _id: existingShow._id, userId },
+                { 
+                    $set: { 
+                        ...updateFields,
+                        watchedEpisodeIds: mergedWatchedIds,
+                        favoriteEpisodeIds: mergedFavoriteIds, 
                     }
-                );
-            } else {
-                // Add new season
-                await db.collection("tv_shows").updateOne(
-                    { _id: existingShow._id, userId }, // FILTER BY userId
-                    { 
-                        $push: { seasonsWatched: newSeason },
-                        $set: {
-                            ...(genre && { genre }),
-                            ...(plot && { plot }),
-                            ...(rating && { rating }),
-                            ...(actors && { actors }),
-                            ...(imdbRating && { imdbRating }),
-                            ...(myRating && { myRating }),
-                            ...(personalNotes && { personalNotes }),
-                            isFavorite: isFavorite !== undefined ? isFavorite : existingShow.isFavorite,
-                        }
-                    }
-                );
-            }
+                }
+            );
             return NextResponse.json({ message: "TV show updated" });
         } else {
             // Create new TV show
             const result = await db.collection("tv_shows").insertOne({ 
-                id, // Store the unique ID here
-                title, 
-                poster_path, 
-                seasonsWatched, 
-                genre,
-                plot,
-                rating,
-                actors,
-                imdbRating,
-                myRating,
-                personalNotes,
-                isFavorite,
+                ...updateFields,
+                id,
+                watchedEpisodeIds,
+                favoriteEpisodeIds, 
                 addedAt: new Date(),
-                userId, // ADDED userId
+                userId,
             });
             return NextResponse.json(result, { status: 201 });
         }
@@ -118,20 +112,38 @@ export async function PUT(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { _id, myRating, personalNotes, isFavorite } = body;
+        const { _id, myRating, personalNotes, isFavorite, watchedEpisodeIds, favoriteEpisodeIds, totalEpisodes, trackedSeasonCount } = body; 
 
         if (!_id) {
             return NextResponse.json({ error: "ID is required to update" }, { status: 400 });
         }
 
+        const updateData: any = {
+            myRating,
+            personalNotes,
+            isFavorite
+        };
+        
+        if (watchedEpisodeIds !== undefined) {
+             updateData.watchedEpisodeIds = watchedEpisodeIds;
+        }
+        
+        if (favoriteEpisodeIds !== undefined) { 
+             updateData.favoriteEpisodeIds = favoriteEpisodeIds;
+        }
+        
+        if (totalEpisodes !== undefined) { 
+             updateData.totalEpisodes = totalEpisodes;
+        }
+        
+        if (trackedSeasonCount !== undefined) { 
+             updateData.trackedSeasonCount = trackedSeasonCount;
+        }
+
         const result = await db.collection("tv_shows").updateOne(
-            { _id: new ObjectId(_id), userId }, // FILTER BY userId
+            { _id: new ObjectId(_id), userId },
             {
-                $set: {
-                    myRating,
-                    personalNotes,
-                    isFavorite
-                }
+                $set: updateData
             }
         );
         return NextResponse.json(result);
@@ -154,7 +166,7 @@ export async function DELETE(request: NextRequest) {
         if (!id) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
-        const result = await db.collection("tv_shows").deleteOne({ _id: new ObjectId(id), userId }); // FILTER BY userId
+        const result = await db.collection("tv_shows").deleteOne({ _id: new ObjectId(id), userId });
         return NextResponse.json(result);
     } catch (e) {
         if (e instanceof Error && e.message === "User not authenticated.") {

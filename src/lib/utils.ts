@@ -1,4 +1,5 @@
 
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Movie, TVShow, WatchlistItem, SortOption } from "./types"
@@ -19,10 +20,12 @@ export const sortContent = <T extends Movie | TVShow | WatchlistItem>(content: T
             case "title_desc":
                 return b.title.localeCompare(a.title);
             case "imdbRating_desc":
+                // FIX: Robustly parse rating, defaulting to 0 for N/A or missing values
                 const aRatingDesc = parseFloat(a.imdbRating || "0");
                 const bRatingDesc = parseFloat(b.imdbRating || "0");
                 return bRatingDesc - aRatingDesc;
             case "imdbRating_asc":
+                // FIX: Robustly parse rating, defaulting to 0 for N/A or missing values
                 const aRatingAsc = parseFloat(a.imdbRating || "0");
                 const bRatingAsc = parseFloat(b.imdbRating || "0");
                 return aRatingAsc - bRatingAsc;

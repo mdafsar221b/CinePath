@@ -1,4 +1,5 @@
 
+
 export type NewMovie = {
   title: string;
   year: number;
@@ -11,10 +12,10 @@ export type NewMovie = {
   imdbRating?: string;
 };
 
+// Deprecated: No longer used for tracking watched progress, only for movie-style adds.
 export type NewTVShow = {
   title: string;
   poster_path?: string | null;
-  seasonsWatched: WatchedSeason[];
 };
 
 
@@ -50,16 +51,35 @@ export type Movie = {
   userId: string; 
 };
 
-export type WatchedSeason = {
-  season: number;
-  watchedEpisodes: number[]|null;
+
+// --- NEW TV SHOW TYPES ---
+
+export type WatchedEpisode = {
+  id: string; // IMDb ID (ttXXXXXXX)
+  title: string;
+  episode: string;
+  rating: string;
+  released: string;
+};
+
+export type OMDBSingleSeason = {
+  Season: string;
+  Episodes: WatchedEpisode[];
+};
+
+export type OMDBSummary = {
+  totalSeasons: string;
+  imdbID: string;
 };
 
 export type TVShow = {
   _id: string;
-  id?: string;
+  id: string; // IMDb ID (CRITICAL: now required and stored)
   title: string;
-  seasonsWatched: WatchedSeason[];
+  watchedEpisodeIds: string[]; // List of IMDb IDs of watched episodes
+  favoriteEpisodeIds: string[]; // NEW: List of IMDb IDs of favorite episodes
+  totalEpisodes?: number; // NEW: Total number of episodes (for card display)
+  trackedSeasonCount?: number; // FIX: Number of unique seasons with at least one watched episode
   addedAt: number;
   poster_path?: string | null;
   genre?: string;
