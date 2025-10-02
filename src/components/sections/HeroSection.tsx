@@ -68,7 +68,8 @@ export const HeroSection = ({
   };
   
   const loggedOutContent = (
-      <div className="flex flex-col items-center justify-center min-h-[85vh] p-4 md:p-8">
+      // MODIFIED: Replaced min-h-[] with responsive padding for better content flow
+      <div className="flex flex-col items-center justify-center pt-24 pb-32 p-4 md:p-8">
           <motion.section 
               className="text-center w-full max-w-2xl mx-auto"
               initial={{ opacity: 0, y: -20 }}
