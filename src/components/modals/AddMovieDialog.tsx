@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -13,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { NewMovie } from "@/lib/types";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 interface AddMovieDialogProps {
   onAddMovie: (movie: NewMovie) => void;
@@ -53,6 +55,7 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
     } catch (e) {
       console.error("Search error:", e);
       setResults([]);
+      toast.error("Failed to perform movie search.");
     } finally {
       setLoading(false);
     }
@@ -127,9 +130,14 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all duration-300 hover:scale-105">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Movie
+        {/* FIX: Use one button that changes style/content based on screen size */}
+        <Button 
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all duration-300 hover:scale-105 h-10 w-10 sm:w-auto"
+            size="icon" // default to icon size
+        >
+            <Plus className="w-4 h-4 sm:mr-2" />
+            {/* Show 'Add Movie' text only on desktop/tablet */}
+            <span className="hidden sm:inline">Add Movie</span> 
         </Button>
       </DialogTrigger>
       <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">
@@ -269,5 +277,5 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
         )}
       </DialogContent>
       </Dialog>
-        );
-      };
+    );
+};

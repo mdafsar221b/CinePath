@@ -1,4 +1,3 @@
-// src/components/modals/EditTVShowDialog.tsx
 
 
 "use client";
@@ -74,8 +73,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]); 
   
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const [isSavingTracking, setIsSavingTracking] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // Unified saving state
   
   const [seriesStructure, setSeriesStructure] = useState<{ totalSeasons: number; seasons: SeasonDetail[] } | null>(null);
   const [loadingStructure, setLoadingStructure] = useState(false);
@@ -119,17 +117,33 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const totalEpisodes = allEpisodeIds.length;
   const totalWatched = watchedIds.length;
   
-  // Handlers for personal details (My Rating, Notes, Favorite)
-  const handleEditDetails = async (e: React.FormEvent) => {
+  // HANDLER: COMBINES ALL SAVING INTO ONE FUNCTION
+  const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!show) return;
 
-    setLoadingDetails(true);
+    setIsSaving(true);
+    
+    // 1. Calculate Episode/Season Counts
+    const totalEpisodesPayload = seriesStructure ? seriesStructure.seasons.flatMap(s => s.episodes).length : show.totalEpisodes;
+    
+    // 2. Count how many seasons have at least one watched episode
+    const trackedSeasonCount = seriesStructure 
+        ? seriesStructure.seasons.filter(season => 
+            season.episodes.some(episode => watchedIds.includes(episode.id))
+          ).length
+        : 0;
+
+    // 3. Combine ALL fields into one payload
     const updatedShowPayload = {
       _id: show._id,
       myRating,
       personalNotes,
       isFavorite,
+      watchedEpisodeIds: watchedIds, 
+      favoriteEpisodeIds: favoriteIds, 
+      totalEpisodes: totalEpisodesPayload, 
+      trackedSeasonCount: trackedSeasonCount,
     };
 
     try {
@@ -141,71 +155,24 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
 
       if (!res.ok) throw new Error("Failed to update TV show details.");
 
-      
-      onEditTVShow({
-        ...show,
-        ...updatedShowPayload,
-      } as TVShow);
-      
-      toast.success("Personal details saved!");
-
-    } catch (error) {
-      console.error("Error updating TV show details:", error);
-      toast.error("Failed to save personal details.");
-    } finally {
-      setLoadingDetails(false);
-    }
-  };
-  
-  // Handler for Episode Tracking (Batch Save)
-  const handleSaveTracking = async () => {
-    if (!show) return;
-
-    setIsSavingTracking(true);
-    
-    // Determine if totalEpisodes needs to be updated in the DB
-    const totalEpisodesPayload = seriesStructure ? seriesStructure.seasons.flatMap(s => s.episodes).length : show.totalEpisodes;
-    
-    // NEW CALCULATION: Count how many seasons have at least one watched episode
-    const trackedSeasonCount = seriesStructure 
-        ? seriesStructure.seasons.filter(season => 
-            season.episodes.some(episode => watchedIds.includes(episode.id))
-          ).length
-        : 0;
-
-    const updatedShowPayload = {
-      _id: show._id,
-      watchedEpisodeIds: watchedIds, 
-      favoriteEpisodeIds: favoriteIds, 
-      totalEpisodes: totalEpisodesPayload, 
-      trackedSeasonCount: trackedSeasonCount, // NEW FIELD
-    };
-
-    try {
-      const res = await fetch("/api/tv-shows", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedShowPayload),
-      });
-
-      if (!res.ok) throw new Error("Failed to update TV show tracking.");
-
-      // Update the parent state immediately
+      // 4. Update the parent state immediately
       const updatedShow = {
         ...show,
         ...updatedShowPayload, 
       } as TVShow;
       onEditTVShow(updatedShow);
       
-      toast.success("Episode progress saved!");
+      toast.success("All changes saved!");
+      onOpenChange(false); // Close dialog on success
       
     } catch (error) {
-      console.error("Error saving episode tracking:", error);
-      toast.error("Failed to save episode progress.");
+      console.error("Error saving TV show changes:", error);
+      toast.error("Failed to save changes.");
     } finally {
-      setIsSavingTracking(false);
+      setIsSaving(false);
     }
   };
+
 
   const handleEpisodeCheck = (episodeId: string, checked: boolean) => {
     setWatchedIds(prev => {
@@ -270,51 +237,47 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         </DialogHeader>
 
        
-        <form onSubmit={handleEditDetails} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="myRating" className="text-sm font-medium">My Rating (1-10)</Label>
-            <Input
-              id="myRating"
-              type="number"
-              value={myRating ?? ""}
-              // FIX: Handle empty string explicitly to set state to null, preventing saving 0 unintentionally.
-              onChange={(e) => setMyRating(e.target.value === "" ? null : Number(e.target.value))}
-              className="glass-card border-border/50 rounded-xl"
-              min="1"
-              max="10"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="personalNotes" className="text-sm font-medium">Personal Notes</Label>
-            <Textarea
-              id="personalNotes"
-              value={personalNotes}
-              onChange={(e) => setPersonalNotes(e.target.value)}
-              className="glass-card border-border/50 rounded-xl"
-              placeholder="Add your thoughts about the show..."
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isFavorite"
-                checked={isFavorite}
-                onCheckedChange={checked => setIsFavorite(checked === true)}
-              />
-              <Label
-                htmlFor="isFavorite"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Mark as Favorite
-              </Label>
+        {/* Personal Details Section */}
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <Label htmlFor="myRating" className="text-sm font-medium">My Rating (1-10)</Label>
+                <Input
+                id="myRating"
+                type="number"
+                value={myRating ?? ""}
+                onChange={(e) => setMyRating(e.target.value === "" ? null : Number(e.target.value))}
+                className="glass-card border-border/50 rounded-xl"
+                min="1"
+                max="10"
+                />
             </div>
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1 rounded-xl" disabled={loadingDetails}>
-              {loadingDetails ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Personal Details"}
-            </Button>
-          </div>
-        </form>
+            <div className="space-y-2">
+                <Label htmlFor="personalNotes" className="text-sm font-medium">Personal Notes</Label>
+                <Textarea
+                id="personalNotes"
+                value={personalNotes}
+                onChange={(e) => setPersonalNotes(e.target.value)}
+                className="glass-card border-border/50 rounded-xl"
+                placeholder="Add your thoughts about the show..."
+                />
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox
+                    id="isFavorite"
+                    checked={isFavorite}
+                    onCheckedChange={checked => setIsFavorite(checked === true)}
+                />
+                <Label
+                    htmlFor="isFavorite"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Mark as Favorite
+                </Label>
+            </div>
+        </div>
 
        
+        {/* Episode Tracking Section */}
         <div className="mt-4 border-t border-border/50 pt-4">
             <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">Episode Tracking</h4>
             
@@ -345,13 +308,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                             {isIndeterminate ? "Mark All Unwatched" : "Mark All Watched"}
                           </Label>
                         </div>
-                        <Button 
-                            onClick={handleSaveTracking} 
-                            disabled={isSavingTracking || totalEpisodes === 0}
-                            className="text-sm py-2 h-auto"
-                        >
-                            {isSavingTracking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Progress...</> : "Save Episode Progress"}
-                        </Button>
                       </div>
                   </div>
                   
@@ -367,7 +323,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                                 title={`Season ${season.seasonNumber}`}
                                 totalEpisodes={season.episodes.length}
                                 watchedEpisodes={watchedInSeason}
-                                defaultOpen={watchedInSeason > 0 && watchedInSeason < season.episodes.length} // Open partially watched seasons
+                                defaultOpen={watchedInSeason > 0 && watchedInSeason < season.episodes.length}
                             >
                                 <div className="flex justify-between items-center pb-2 border-b border-border/50 mb-3">
                                   <div className="flex items-center space-x-2">
@@ -395,7 +351,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                                             E{episode.episodeNumber}: {episode.title}
                                         </Label>
                                         
-                                        {/* NEW: Favorite Toggle */}
+                                        {/* Favorite Toggle */}
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -418,16 +374,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                         );
                     })}
                   </div>
-                  
-                  <div className="pt-4">
-                      <Button 
-                          onClick={handleSaveTracking} 
-                          disabled={isSavingTracking || totalEpisodes === 0}
-                          className="w-full"
-                      >
-                            {isSavingTracking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Progress...</> : "Save Episode Progress"}
-                      </Button>
-                  </div>
                 </>
             ) : (
                 <div className="text-center py-8">
@@ -435,6 +381,18 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                 </div>
             )}
         </div>
+        
+        {/* Unified Save Button in a sticky-like dialog footer style */}
+        <div className="sticky bottom-0 bg-background/90 backdrop-blur-sm p-4 -mx-6 -mb-6 border-t border-border/50 rounded-b-2xl">
+            <Button 
+                onClick={handleSaveChanges} 
+                disabled={isSaving}
+                className="w-full"
+            >
+                {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Changes...</> : "Save Changes"}
+            </Button>
+        </div>
+        
       </DialogContent>
     </Dialog>
   );

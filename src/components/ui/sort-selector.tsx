@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -18,9 +19,16 @@ interface SortSelectorProps {
 export const SortSelector = ({ value, onValueChange }: SortSelectorProps) => {
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-[180px] glass-card">
-        <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
-        <SelectValue placeholder="Sort by" />
+      <SelectTrigger className="w-[120px] sm:w-[180px] glass-card">
+        <ArrowUpDown className="h-4 w-4 text-muted-foreground sm:mr-2" />
+        {/* Only show text on desktop/tablet screens */}
+        <span className="hidden sm:inline">
+            <SelectValue placeholder="Sort by" />
+        </span>
+        {/* Use a short placeholder for mobile for better spacing */}
+        <span className="sm:hidden">
+            <SelectValue placeholder="Sort" />
+        </span>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="addedAt_desc">Added-Newest</SelectItem>

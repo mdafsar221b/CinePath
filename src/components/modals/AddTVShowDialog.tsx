@@ -88,12 +88,15 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
+        {/* FIX: Use one button that changes style/content based on screen size */}
         <Button
-          variant="outline"
-          className="px-6 py-3 glass-card border-primary/30 text-foreground rounded-xl font-medium hover:bg-primary/10 transition-all duration-300 hover:scale-105"
+            variant="outline"
+            className="px-6 py-3 glass-card border-primary/30 text-foreground rounded-xl font-medium hover:bg-primary/10 transition-all duration-300 hover:scale-105 h-10 w-10 sm:w-auto"
+            size="icon" // default to icon size
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Add TV Show
+            <Plus className="w-4 h-4 sm:mr-2" />
+            {/* Show 'Add TV Show' text only on desktop/tablet */}
+            <span className="hidden sm:inline">Add TV Show</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">

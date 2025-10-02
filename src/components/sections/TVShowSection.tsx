@@ -1,12 +1,13 @@
 
 
+
 import { TVShow, SortOption } from "@/lib/types";
 import { TVShowCard } from "@/components/core/TVShowCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
-import { ChevronLeft, ChevronRight } from "lucide-react"; 
+import { ChevronLeft, ChevronRight, Tv2 } from "lucide-react"; 
 import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
 
 interface TVShowSectionProps {
@@ -26,6 +27,21 @@ interface TVShowSectionProps {
   onSetPage: (page: number) => void;
   onAddTVShow: (id: string, title: string, poster_path: string | null) => Promise<void>; 
 }
+
+// TVShowPlaceholder Component
+const TVShowPlaceholder = ({ onAddTVShow }: Pick<TVShowSectionProps, 'onAddTVShow'>) => (
+    <div className="text-center py-12 px-6 glass-card rounded-2xl border border-primary/20 bg-primary/5 col-span-full">
+        <Tv2 className="w-10 h-10 mx-auto text-primary mb-4" />
+        <h3 className="text-xl font-semibold mb-2 text-foreground">
+            Where Are Your TV Shows?
+        </h3>
+        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            You haven't tracked any TV shows yet. Click the button below to add a show and begin episode-by-episode tracking!
+        </p>
+        <AddTVShowDialog onAddTVShow={onAddTVShow} />
+    </div>
+);
+
 
 export const TVShowSection = ({
   filteredTVShows,
@@ -47,6 +63,8 @@ export const TVShowSection = ({
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const showPagination = totalPages > 1;
 
+  const showPlaceholder = filteredTVShows.length === 0 && tvGenreFilter === "all";
+
   return (
     <section id="tv-shows"className="mb-16">
     
@@ -62,8 +80,14 @@ export const TVShowSection = ({
           <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Filter by genre:</span>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={tvGenreFilter} onValueChange={onSetTvGenreFilter}>
-              <SelectTrigger className="w-[150px] sm:w-[180px] glass-card">
-                <SelectValue placeholder="All genres" />
+              {/* Reduced width on mobile, and display short placeholder text */}
+              <SelectTrigger className="w-[100px] sm:w-[180px] glass-card">
+                <span className="hidden sm:inline">
+                    <SelectValue placeholder="All genres" />
+                </span>
+                <span className="sm:hidden">
+                    <SelectValue placeholder="Genre" /> 
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All genres</SelectItem>
@@ -79,15 +103,25 @@ export const TVShowSection = ({
                     ))}
               </SelectContent>
             </Select>
+            {/* UX IMPROVEMENT: Show item count when filter is active */}
             {tvGenreFilter !== "all" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onSetTvGenreFilter("all")}
-                className="glass-card"
-              >
-                Clear
-              </Button>
+              <>
+                {/* Badge showing the count of filtered items */}
+                <Badge 
+                  variant="outline" 
+                  className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/30 hidden sm:inline-flex"
+                >
+                  {totalItems} Items
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onSetTvGenreFilter("all")}
+                  className="glass-card"
+                >
+                  Clear
+                </Button>
+              </>
             )}
           </div>
         
@@ -97,7 +131,9 @@ export const TVShowSection = ({
         </div>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-        {filteredTVShows.length > 0 ? (
+        {showPlaceholder ? (
+            <TVShowPlaceholder onAddTVShow={onAddTVShow} />
+        ) : filteredTVShows.length > 0 ? (
           filteredTVShows.map((show) => (
             <TVShowCard
               key={show._id.toString()}
@@ -107,13 +143,9 @@ export const TVShowSection = ({
               onEdit={onEdit}
             />
           ))
-        ) : tvGenreFilter !== "all" ? (
-          <div className="text-center py-12 col-span-full glass-card rounded-2xl">
-            <p className="text-muted-foreground">No TV shows found for the selected filter.</p>
-          </div>
         ) : (
           <div className="text-center py-12 col-span-full glass-card rounded-2xl">
-            <p className="text-muted-foreground">No TV shows added yet. Add one to get started!</p>
+            <p className="text-muted-foreground">No TV shows found for the selected filter.</p>
           </div>
         )}
       </div>

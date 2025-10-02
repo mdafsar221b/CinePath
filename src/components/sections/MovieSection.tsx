@@ -1,9 +1,10 @@
+
 import { Movie, SortOption } from "@/lib/types";
 import { MovieCard } from "@/components/core/MovieCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
-import { ChevronLeft, ChevronRight } from "lucide-react"; 
+import { ChevronLeft, ChevronRight, Film, Plus } from "lucide-react"; 
 import { Badge } from "@/components/ui/badge"; 
 import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
 
@@ -25,6 +26,21 @@ interface MovieSectionProps {
   onAddMovie: (movie: any) => void;
 }
 
+// MoviePlaceholder Component
+const MoviePlaceholder = () => (
+  <div className="text-center py-12 px-6 glass-card rounded-2xl border border-primary/20 bg-primary/5 col-span-full">
+    <Film className="w-10 h-10 mx-auto text-primary mb-4" />
+    <h3 className="text-xl font-semibold mb-2 text-foreground">
+      Start Tracking Your Movies
+    </h3>
+    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+      You haven't added any movies yet. Use the button below to quickly search and log what you've watched!
+    </p>
+    <AddMovieDialog onAddMovie={() => {}} /> 
+  </div>
+);
+
+
 export const MovieSection = ({
   filteredMovies,
   movieGenres,
@@ -45,6 +61,8 @@ export const MovieSection = ({
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const showPagination = totalPages > 1;
 
+  const showPlaceholder = filteredMovies.length === 0 && movieGenreFilter === "all";
+
   return (
     <section id="movies" className="mb-16">
      
@@ -63,8 +81,14 @@ export const MovieSection = ({
         
           <div className="flex flex-wrap items-center gap-2">
             <Select value={movieGenreFilter} onValueChange={onSetMovieGenreFilter}>
-              <SelectTrigger className="w-[150px] sm:w-[180px] glass-card">
-                <SelectValue placeholder="All genres" />
+              {/* Reduced width on mobile, and display short placeholder text */}
+              <SelectTrigger className="w-[100px] sm:w-[180px] glass-card">
+                <span className="hidden sm:inline">
+                    <SelectValue placeholder="All genres" />
+                </span>
+                <span className="sm:hidden">
+                    <SelectValue placeholder="Genre" /> 
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All genres</SelectItem>
@@ -73,16 +97,27 @@ export const MovieSection = ({
                 ))}
               </SelectContent>
             </Select>
+            {/* UX IMPROVEMENT: Show item count when filter is active */}
             {movieGenreFilter !== "all" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onSetMovieGenreFilter("all")}
-                className="glass-card"
-              >
-                Clear
-              </Button>
+              <>
+                {/* Badge showing the count of filtered items */}
+                <Badge 
+                  variant="outline" 
+                  className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/30 hidden sm:inline-flex"
+                >
+                  {totalItems} Items
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onSetMovieGenreFilter("all")}
+                  className="glass-card"
+                >
+                  Clear
+                </Button>
+              </>
             )}
+            
           </div>
           
        
@@ -92,7 +127,9 @@ export const MovieSection = ({
         </div>
       </div>
       <div className="grid grid-cols-3 lg:grid-cols-5 gap-4">
-        {filteredMovies.length > 0 ? (
+        {showPlaceholder ? (
+          <MoviePlaceholder />
+        ) : filteredMovies.length > 0 ? (
           filteredMovies.map((movie) => (
             <MovieCard
               key={movie._id.toString()}
@@ -102,13 +139,9 @@ export const MovieSection = ({
               onEdit={onEdit}
             />
           ))
-        ) : movieGenreFilter !== "all" ? (
-          <div className="text-center py-12 col-span-full glass-card rounded-2xl">
-            <p className="text-muted-foreground">No movies found for the selected genre.</p>
-          </div>
         ) : (
           <div className="text-center py-12 col-span-full glass-card rounded-2xl">
-            <p className="text-muted-foreground">No movies added yet. Add one to get started!</p>
+            <p className="text-muted-foreground">No movies found for the selected genre.</p>
           </div>
         )}
       </div>
