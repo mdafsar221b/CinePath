@@ -1,3 +1,5 @@
+// src/components/modals/AddTVShowDialog.tsx
+
 "use client";
 
 import {
@@ -13,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 interface AddTVShowDialogProps {
   onAddTVShow: (id: string, title: string, poster_path: string | null) => Promise<void>;
@@ -47,6 +50,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     } catch (e) {
       console.error("Search error:", e);
       setResults([]);
+      toast.error("Failed to perform TV show search.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +62,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     
       await onAddTVShow(show.id, show.title, show.poster_path);
       
-      alert(`${show.title} added! You can now edit it to track episodes.`);
+      toast.success(`${show.title} added! You can now edit it to track episodes.`);
 
       setOpen(false);
       setSearchTerm("");
@@ -66,7 +70,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
 
     } catch (error) {
       console.error("Error adding TV show:", error);
-      alert("Failed to add TV show.");
+      toast.error("Failed to add TV show.");
     } finally {
       setAddingId(null);
     }

@@ -1,3 +1,4 @@
+// src/components/modals/EditMovieDialog.tsx
 
 "use client";
 
@@ -14,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { Movie } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
+import toast from "react-hot-toast";
 
 interface EditMovieDialogProps {
   open: boolean;
@@ -53,8 +55,10 @@ export const EditMovieDialog = ({ open, onOpenChange, movie, onEditMovie }: Edit
       });
       onEditMovie(updatedMovie as Movie);
       onOpenChange(false);
+      toast.success(`'${movie.title}' details saved!`);
     } catch (error) {
       console.error("Error updating movie:", error);
+      toast.error("Failed to save movie details.");
     } finally {
       setLoading(false);
     }

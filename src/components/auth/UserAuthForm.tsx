@@ -1,3 +1,5 @@
+// src/components/auth/UserAuthForm.tsx
+
 "use client";
 
 import * as React from "react";
@@ -6,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
     onClose: () => void;
@@ -30,17 +33,17 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     
-                    body: JSON.stringify({ email, password, name }), // Removed favoriteGenre from payload
+                    body: JSON.stringify({ email, password, name }),
                 });
 
                 if (signUpRes.ok) {
-                    alert("Account created successfully! You can now log in.");
+                    toast.success("Account created successfully! You can now log in.");
                     setIsSignUp(false); 
                    
                     setName("");
                 } else {
                     const errorData = await signUpRes.json();
-                    alert(errorData.error || "Sign up failed.");
+                    toast.error(errorData.error || "Sign up failed.");
                 }
 
             } else {
@@ -53,13 +56,14 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
 
                 if (signInResult?.ok) {
                     onClose();
+                    toast.success("Login successful!");
                 } else {
-                    alert("Login failed. Check your email and password.");
+                    toast.error("Login failed. Check your email and password.");
                 }
             }
         } catch (error) {
             console.error(error);
-            alert("An error occurred. Please try again.");
+            toast.error("An error occurred. Please try again.");
         } finally {
             setIsLoading(false);
         }
@@ -68,7 +72,7 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
     return (
         <div className={className} {...props}>
             <form onSubmit={onSubmit} className="space-y-6">
-                {/* Name Field - Only visible during Sign Up */}
+                
                 {isSignUp && (
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
@@ -87,7 +91,7 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
                         />
                     </div>
                 )}
-                {/* Email Field */}
+                
                 <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -104,7 +108,7 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
                         required
                     />
                 </div>
-                {/* Password Field */}
+                
                 <div className="grid gap-2">
                     <Label htmlFor="password">Password</Label>
                     <Input
@@ -118,7 +122,7 @@ export function UserAuthForm({ onClose, className, ...props }: UserAuthFormProps
                         required
                     />
                 </div>
-                {/* Removed Favorite Genre Field */}
+                
                 
                 <Button disabled={isLoading} className="w-full">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

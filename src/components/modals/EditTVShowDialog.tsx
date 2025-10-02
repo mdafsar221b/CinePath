@@ -1,3 +1,4 @@
+// src/components/modals/EditTVShowDialog.tsx
 
 
 "use client";
@@ -19,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ChevronDown, ChevronUp, Heart } from "lucide-react"; 
 import { cn } from "@/lib/utils"; 
+import toast from "react-hot-toast";
 
 // NOTE: Since Collapsible is not provided as a separate UI component,
 // this custom wrapper is used to provide the required functionality.
@@ -100,6 +102,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         } catch (error) {
             console.error("Error fetching series structure:", error);
             setSeriesStructure(null);
+            toast.error("Failed to fetch episode details for tracking.");
         } finally {
             setLoadingStructure(false);
         }
@@ -144,8 +147,11 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         ...updatedShowPayload,
       } as TVShow);
       
+      toast.success("Personal details saved!");
+
     } catch (error) {
       console.error("Error updating TV show details:", error);
+      toast.error("Failed to save personal details.");
     } finally {
       setLoadingDetails(false);
     }
@@ -191,11 +197,11 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
       } as TVShow;
       onEditTVShow(updatedShow);
       
-      alert("Episode progress saved!");
+      toast.success("Episode progress saved!");
       
     } catch (error) {
       console.error("Error saving episode tracking:", error);
-      alert("Failed to save episode progress.");
+      toast.error("Failed to save episode progress.");
     } finally {
       setIsSavingTracking(false);
     }

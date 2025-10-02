@@ -1,3 +1,4 @@
+// src/hooks/useCinePath.ts
 
 
 "use client";
@@ -6,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Movie, TVShow, NewMovie, DetailedContent, WatchlistItem, SortOption, SearchResult } from "@/lib/types";
 import { sortContent } from "@/lib/utils";
 import { useSession } from "next-auth/react"; 
+import toast from "react-hot-toast";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -56,6 +58,7 @@ export const useCinePath = () => {
             setMovies(data);
         } catch (e) {
             console.error("Error fetching movies:", e);
+            toast.error("Failed to load movies.");
         }
     };
 
@@ -98,6 +101,7 @@ export const useCinePath = () => {
 
         } catch (e) {
             console.error("Error fetching TV shows:", e);
+            toast.error("Failed to load TV shows.");
         }
     };
 
@@ -113,6 +117,7 @@ export const useCinePath = () => {
             setWatchlist(data);
         } catch (e) {
             console.error("Error fetching watchlist:", e);
+            toast.error("Failed to load watchlist.");
         }
     };
 
@@ -177,18 +182,30 @@ export const useCinePath = () => {
 
     const handleAddMovie = async (newMovie: NewMovie) => {
         if (!isLoggedIn) return; 
-        await fetch("/api/movies", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newMovie),
-        });
-        fetchMovies();
+        try {
+            await fetch("/api/movies", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newMovie),
+            });
+            toast.success(`'${newMovie.title}' added to your Movies Watched list!`);
+            fetchMovies();
+        } catch (error) {
+            console.error("Error adding movie:", error);
+            toast.error(`Failed to add '${newMovie.title}'.`);
+        }
     };
 
     const handleRemoveMovie = async (_id: string) => {
         if (!isLoggedIn) return;
-        await fetch(`/api/movies?id=${_id}`, { method: "DELETE" });
-        fetchMovies();
+        try {
+            await fetch(`/api/movies?id=${_id}`, { method: "DELETE" });
+            toast.success("Movie removed.");
+            fetchMovies();
+        } catch (error) {
+            console.error("Error removing movie:", error);
+            toast.error("Failed to remove movie.");
+        }
     };
 
     const handleEditMovie = (movie: Movie) => {
@@ -197,9 +214,12 @@ export const useCinePath = () => {
         setEditMovieOpen(true);
     };
 
-    const handleUpdateMovie = async () => {
+    const handleUpdateMovie = async (updatedMovie?: Movie) => {
         if (!isLoggedIn) return; 
         fetchMovies();
+        if (updatedMovie) {
+             toast.success(`'${updatedMovie.title}' details updated.`);
+        }
     };
 
     const handleAddTVShow = async (id: string, title: string, poster_path: string | null) => {
@@ -228,8 +248,14 @@ export const useCinePath = () => {
 
     const handleRemoveTVShow = async (_id: string) => {
         if (!isLoggedIn) return; 
-        await fetch(`/api/tv-shows?id=${_id}`, { method: "DELETE" });
-        fetchTVShows();
+        try {
+            await fetch(`/api/tv-shows?id=${_id}`, { method: "DELETE" });
+            toast.success("TV Show removed.");
+            fetchTVShows();
+        } catch (error) {
+            console.error("Error removing TV Show:", error);
+            toast.error("Failed to remove TV show.");
+        }
     };
 
     const handleEditTVShow = (show: TVShow) => {
@@ -244,6 +270,7 @@ export const useCinePath = () => {
         if (updatedShow) {
              setTVShows(prev => prev.map(s => s._id === updatedShow._id ? updatedShow : s));
              setTvShowToEdit(updatedShow);
+             // Note: We don't toast here as the EditTVShowDialog handles its own "Save Progress" toast
         }
         // Then re-fetch all shows in the background to ensure consistency
         fetchTVShows();
@@ -253,9 +280,11 @@ export const useCinePath = () => {
         if (!isLoggedIn) return; 
         try {
             await fetch(`/api/watchlist?id=${_id}`, { method: "DELETE" });
+            toast.success("Item removed from watchlist.");
             fetchWatchlist();
         } catch (error) {
             console.error("Error removing from watchlist:", error);
+            toast.error("Failed to remove item from watchlist.");
         }
     };
 
@@ -387,7 +416,7 @@ export const useCinePath = () => {
             plot: enrichedItem.plot || "N/A",
             rating: enrichedItem.rating || "N/A",
             actors: enrichedItem.actors || "N/A",
-            director: enrichedItem.director || "N/A",
+            director: (enrichedItem as any).director || "N/A",
             imdbRating: enrichedItem.imdbRating || "N/A",
             type: enrichedItem.type
         };
@@ -401,48 +430,55 @@ export const useCinePath = () => {
         // FETCH FIX: Ensure the item has all details before marking it watched
         const enrichedItem = await fetchAndEnrichContentDetails(item);
 
-        if (enrichedItem.type === 'movie') {
-            const movieData = {
-                id: enrichedItem.id,
-                title: enrichedItem.title,
-                year: parseInt(enrichedItem.year || "0"),
-                poster_path: enrichedItem.poster_path,
-                genre: enrichedItem.genre,
-                plot: enrichedItem.plot,
-                rating: enrichedItem.rating,
-                actors: enrichedItem.actors,
-                director: enrichedItem.director,
-                imdbRating: enrichedItem.imdbRating,
-            };
-            await fetch("/api/movies", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(movieData),
-            });
-            fetchMovies();
-        } else {
-             // For TV, add the series with empty watchedEpisodeIds
-            const tvShowData = {
-                id: enrichedItem.id,
-                title: enrichedItem.title,
-                poster_path: enrichedItem.poster_path,
-                genre: enrichedItem.genre,
-                plot: enrichedItem.plot,
-                rating: enrichedItem.rating,
-                actors: enrichedItem.actors,
-                imdbRating: enrichedItem.imdbRating,
-                watchedEpisodeIds: [] as string[], 
-                favoriteEpisodeIds: [] as string[],
-            };
-            await fetch("/api/tv-shows", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(tvShowData),
-            });
-            fetchTVShows();
+        try {
+            if (enrichedItem.type === 'movie') {
+                const movieData = {
+                    id: enrichedItem.id,
+                    title: enrichedItem.title,
+                    year: parseInt(enrichedItem.year || "0"),
+                    poster_path: enrichedItem.poster_path,
+                    genre: enrichedItem.genre,
+                    plot: enrichedItem.plot,
+                    rating: enrichedItem.rating,
+                    actors: enrichedItem.actors,
+                    director: enrichedItem.director,
+                    imdbRating: enrichedItem.imdbRating,
+                };
+                await fetch("/api/movies", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(movieData),
+                });
+                toast.success(`'${item.title}' marked as watched and added to Movies!`);
+                fetchMovies();
+            } else {
+                 // For TV, add the series with empty watchedEpisodeIds
+                const tvShowData = {
+                    id: enrichedItem.id,
+                    title: enrichedItem.title,
+                    poster_path: enrichedItem.poster_path,
+                    genre: enrichedItem.genre,
+                    plot: enrichedItem.plot,
+                    rating: enrichedItem.rating,
+                    actors: enrichedItem.actors,
+                    imdbRating: enrichedItem.imdbRating,
+                    watchedEpisodeIds: [] as string[], 
+                    favoriteEpisodeIds: [] as string[],
+                };
+                await fetch("/api/tv-shows", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(tvShowData),
+                });
+                toast.success(`'${item.title}' marked as watched and added to TV Shows!`);
+                fetchTVShows();
+            }
+            await fetch(`/api/watchlist?id=${item._id}`, { method: "DELETE" });
+            fetchWatchlist();
+        } catch (error) {
+            console.error("Error marking watched:", error);
+            toast.error(`Failed to mark '${item.title}' as watched. It may already be in your watched lists.`);
         }
-        await fetch(`/api/watchlist?id=${item._id}`, { method: "DELETE" });
-        fetchWatchlist();
     };
     
     // NEW LOGIC: We include "favorites" as a pseudo-genre option
@@ -486,7 +522,7 @@ export const useCinePath = () => {
 
     const handleAddToWatchlist = async (item: any) => {
         if (!isLoggedIn) { 
-            alert("Please log in to add items to your watchlist.");
+            toast.error("Please log in to add items to your watchlist.");
             return;
         } 
 
@@ -501,18 +537,18 @@ export const useCinePath = () => {
             });
             const responseData = await res.json();
             if (res.status === 409) {
-                alert(responseData.error);
+                toast.error(responseData.error);
                 return;
             }
             if (!res.ok) {
                 console.error("Failed to add to watchlist:", responseData);
                 throw new Error("Failed to add to watchlist");
             }
-            alert(`${item.title} added to watchlist!`);
+            toast.success(`${item.title} added to watchlist!`);
             fetchWatchlist();
         } catch (error) {
             console.error("Error adding to watchlist:", error);
-            alert("Failed to add to watchlist");
+            toast.error("Failed to add to watchlist");
         }
     };
 

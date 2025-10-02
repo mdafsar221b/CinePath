@@ -1,10 +1,11 @@
-// mdafsar221b/cinepath/CinePath-171babe307d46bb864042c512eef13a22b0b192f/src/app/layout.tsx (UPDATED)
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "next-themes";
-import { AuthProviders } from "@/components/auth/AuthProviders"; // ADDED
+import { AuthProviders } from "@/components/auth/AuthProviders";
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,6 +33,32 @@ export default function RootLayout({
               </main>
               <Footer />
             </div>
+         
+            <Toaster 
+              position="bottom-center"
+              toastOptions={{
+                style: {
+                  background: 'var(--card)', 
+                  color: 'var(--foreground)', 
+                  border: '1px solid var(--border)', 
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)', 
+                  minWidth: '250px',
+                  zIndex: 9999,
+                },
+                success: {
+                    iconTheme: {
+                        primary: 'var(--primary)',
+                        secondary: 'var(--card)', 
+                    },
+                },
+                error: {
+                    iconTheme: {
+                        primary: 'var(--destructive)',
+                        secondary: 'var(--card)',
+                    },
+                },
+              }}
+            />
           </ThemeProvider>
         </AuthProviders> 
       </body>
