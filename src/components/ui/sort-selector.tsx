@@ -19,16 +19,11 @@ interface SortSelectorProps {
 export const SortSelector = ({ value, onValueChange }: SortSelectorProps) => {
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-[120px] sm:w-[180px] glass-card">
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground sm:mr-2" />
-        {/* Only show text on desktop/tablet screens */}
-        <span className="hidden sm:inline">
-            <SelectValue placeholder="Sort by" />
-        </span>
-        {/* Use a short placeholder for mobile for better spacing */}
-        <span className="sm:hidden">
-            <SelectValue placeholder="Sort" />
-        </span>
+      {/* Set a small, fixed width by default */}
+      <SelectTrigger className="w-[110px] glass-card"> 
+        <ArrowUpDown className="h-4 w-4 text-muted-foreground mr-1" /> 
+        {/* Use the shortest placeholder text */}
+        <SelectValue placeholder="Sort" /> 
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="addedAt_desc">Added-Newest</SelectItem>

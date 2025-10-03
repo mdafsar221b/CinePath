@@ -1,6 +1,5 @@
 
 
-
 import { TVShow, SortOption } from "@/lib/types";
 import { TVShowCard } from "@/components/core/TVShowCard";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SortSelector } from "@/components/ui/sort-selector";
 import { ChevronLeft, ChevronRight, Tv2 } from "lucide-react"; 
 import { AddTVShowDialog } from "@/components/modals/AddTVShowDialog";
+import { ContentSectionSkeleton } from "@/components/ui/SkeletonCard"; 
 
 interface TVShowSectionProps {
   filteredTVShows: TVShow[];
@@ -26,6 +26,7 @@ interface TVShowSectionProps {
   itemsPerPage: number;
   onSetPage: (page: number) => void;
   onAddTVShow: (id: string, title: string, poster_path: string | null) => Promise<void>; 
+  isLoading: boolean; // NEW PROP
 }
 
 // TVShowPlaceholder Component
@@ -57,13 +58,24 @@ export const TVShowSection = ({
   totalItems,
   itemsPerPage,
   onSetPage,
-  onAddTVShow, 
+  onAddTVShow,
+  isLoading
 }: TVShowSectionProps) => {
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const showPagination = totalPages > 1;
 
   const showPlaceholder = filteredTVShows.length === 0 && tvGenreFilter === "all";
+
+  if (isLoading) {
+    return (
+        <section id="tv-shows" className="mb-16">
+            {/* Skeleton Header */}
+            <div className="mb-8 h-8 w-40 bg-muted/50 rounded-lg animate-pulse" />
+            <ContentSectionSkeleton />
+        </section>
+    );
+  }
 
   return (
     <section id="tv-shows"className="mb-16">
@@ -76,58 +88,59 @@ export const TVShowSection = ({
           </Badge>
         </h2>
         
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-          <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Filter by genre:</span>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={tvGenreFilter} onValueChange={onSetTvGenreFilter}>
-              {/* Reduced width on mobile, and display short placeholder text */}
-              <SelectTrigger className="w-[100px] sm:w-[180px] glass-card">
-                <span className="hidden sm:inline">
-                    <SelectValue placeholder="All genres" />
-                </span>
-                <span className="sm:hidden">
-                    <SelectValue placeholder="Genre" /> 
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All genres</SelectItem>
-                {/* NEW FILTER OPTION */}
-                <SelectItem value="favorites" className="font-semibold text-red-500">
-                    Favorites
-                </SelectItem>
-                {/* Dynamically generated genres, filtering out 'favorites' which is already added */}
-                {tvGenres
-                    .filter(genre => genre !== 'favorites')
-                    .map(genre => (
-                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                    ))}
-              </SelectContent>
-            </Select>
-            {/* UX IMPROVEMENT: Show item count when filter is active */}
-            {tvGenreFilter !== "all" && (
-              <>
-                {/* Badge showing the count of filtered items */}
-                <Badge 
-                  variant="outline" 
-                  className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/30 hidden sm:inline-flex"
-                >
-                  {totalItems} Items
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onSetTvGenreFilter("all")}
-                  className="glass-card"
-                >
-                  Clear
-                </Button>
-              </>
-            )}
-          </div>
+        {/* FIX: Simplified container to flex-wrap for simple horizontal flow (desktop-first small items) */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
+
+            {/* Filter Selector Group */}
+            <div className="flex items-center gap-2 flex-grow-0">
+              <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Filter by genre:</span>
+              
+              <Select value={tvGenreFilter} onValueChange={onSetTvGenreFilter}>
+                {/* Fixed small width for filter dropdown */}
+                <SelectTrigger className="w-[120px] glass-card">
+                  <SelectValue placeholder="Genre" /> 
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All genres</SelectItem>
+                  {/* NEW FILTER OPTION */}
+                  <SelectItem value="favorites" className="font-semibold text-red-500">
+                      Favorites
+                  </SelectItem>
+                
+                  {tvGenres
+                      .filter(genre => genre !== 'favorites')
+                      .map(genre => (
+                          <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                      ))}
+                </SelectContent>
+              </Select>
+
+              {/* Filter Count and Clear Button */}
+              {tvGenreFilter !== "all" && (
+                <>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/30 hidden sm:inline-flex"
+                  >
+                    {totalItems} Items
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onSetTvGenreFilter("all")}
+                    className="glass-card"
+                  >
+                    Clear
+                  </Button>
+                </>
+              )}
+            </div>
         
-          <SortSelector value={tvShowSort} onValueChange={onSetTvShowSort} />
+            {/* Sort Selector */}
+            <SortSelector value={tvShowSort} onValueChange={onSetTvShowSort} />
           
-          <AddTVShowDialog onAddTVShow={onAddTVShow} /> 
+            {/* Add Button */}
+            <AddTVShowDialog onAddTVShow={onAddTVShow} /> 
         </div>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">

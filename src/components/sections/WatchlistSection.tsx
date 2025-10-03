@@ -1,18 +1,20 @@
+// src/components/sections/WatchlistSection.tsx
 import { WatchlistItem } from "@/lib/types";
 import { WatchlistCard } from "@/components/core/WatchlistCard";
 import { Badge } from "@/components/ui/badge";
 import { Search, ListVideo, ArrowRight, Play } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
+import { WatchlistSkeleton } from "@/components/ui/SkeletonCard"; 
 interface WatchlistSectionProps {
   watchlist: WatchlistItem[];
   onRemove: (_id: string) => void;
   onShowDetails: (item: WatchlistItem) => void;
   onMarkWatched: (item: WatchlistItem) => void;
+  isLoading: boolean; 
 }
 
-// NEW: WatchlistPlaceholder Component
+
 const WatchlistPlaceholder = () => (
   <div className="text-center py-12 px-6 glass-card rounded-2xl border border-primary/20 bg-primary/5">
     <ListVideo className="w-10 h-10 mx-auto text-primary mb-4" />
@@ -56,36 +58,41 @@ const WatchlistPlaceholder = () => (
 );
 
 
-export const WatchlistSection = ({ watchlist, onRemove, onShowDetails, onMarkWatched }: WatchlistSectionProps) => {
+export const WatchlistSection = ({ watchlist, onRemove, onShowDetails, onMarkWatched, isLoading }: WatchlistSectionProps) => {
   
-  const showPlaceholder = watchlist.length === 0;
-    
+  if (isLoading) {
+      return (
+        <section id="watchlist" className="mb-16">
+            {/* Skeleton Header */}
+            <div className="mb-8 h-8 w-40 bg-muted/50 rounded-lg animate-pulse" /> 
+            <WatchlistSkeleton />
+        </section>
+      );
+  }
+  
+  if (watchlist.length === 0) {
+      return null;
+  }
+
   return (
     <section id="watchlist" className="mb-16">
       <h2 className="text-2xl md:text-3xl font-semibold mb-8 flex items-center gap-3">
         Watchlist
-        {watchlist.length > 0 && (
-            <Badge variant="outline" className="ml-2 text-xs">
-              {watchlist.length}
-            </Badge>
-        )}
+        <Badge variant="outline" className="ml-2 text-xs">
+          {watchlist.length}
+        </Badge>
       </h2>
-      
-      {showPlaceholder ? (
-        <WatchlistPlaceholder />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {watchlist.map((item) => (
-            <WatchlistCard
-              key={item._id}
-              item={item}
-              onRemove={onRemove}
-              onShowDetails={onShowDetails}
-              onMarkWatched={onMarkWatched}
-            />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {watchlist.map((item) => (
+          <WatchlistCard
+            key={item._id}
+            item={item}
+            onRemove={onRemove}
+            onShowDetails={onShowDetails}
+            onMarkWatched={onMarkWatched}
+          />
+        ))}
+      </div>
     </section>
   );
 };

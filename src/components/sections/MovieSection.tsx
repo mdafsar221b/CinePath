@@ -7,6 +7,7 @@ import { SortSelector } from "@/components/ui/sort-selector";
 import { ChevronLeft, ChevronRight, Film, Plus } from "lucide-react"; 
 import { Badge } from "@/components/ui/badge"; 
 import { AddMovieDialog } from "@/components/modals/AddMovieDialog";
+import { ContentSectionSkeleton } from "@/components/ui/SkeletonCard"; // NEW IMPORT
 
 interface MovieSectionProps {
   filteredMovies: Movie[];
@@ -24,6 +25,7 @@ interface MovieSectionProps {
   itemsPerPage: number;
   onSetPage: (page: number) => void;
   onAddMovie: (movie: any) => void;
+  isLoading: boolean; // NEW PROP
 }
 
 // MoviePlaceholder Component
@@ -56,12 +58,24 @@ export const MovieSection = ({
   itemsPerPage,
   onSetPage,
   onAddMovie,
+  isLoading
 }: MovieSectionProps) => {
   
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const showPagination = totalPages > 1;
 
   const showPlaceholder = filteredMovies.length === 0 && movieGenreFilter === "all";
+  
+  if (isLoading) {
+    return (
+        <section id="movies" className="mb-16">
+            {/* Skeleton Header */}
+            <div className="mb-8 h-8 w-40 bg-muted/50 rounded-lg animate-pulse" />
+            <ContentSectionSkeleton />
+        </section>
+    );
+  }
+
 
   return (
     <section id="movies" className="mb-16">
@@ -75,55 +89,52 @@ export const MovieSection = ({
         </h2>
         
       
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-          <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Filter by genre:</span>
+        {/* FIX: Simplified container to flex-wrap for simple horizontal flow (desktop-first small items) */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
+
+            {/* Filter Selector Group */}
+            <div className="flex items-center gap-2 flex-grow-0">
+              <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">Filter by genre:</span>
+
+              <Select value={movieGenreFilter} onValueChange={onSetMovieGenreFilter}>
+                {/* Fixed small width for filter dropdown */}
+                <SelectTrigger className="w-[120px] glass-card"> 
+                  <SelectValue placeholder="Genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All genres</SelectItem>
+                  {movieGenres.map(genre => (
+                    <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Filter Count and Clear Button */}
+              {movieGenreFilter !== "all" && (
+                <>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/30 hidden sm:inline-flex"
+                  >
+                    {totalItems} Items
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onSetMovieGenreFilter("all")}
+                    className="glass-card"
+                  >
+                    Clear
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Sort Selector */}
+            <SortSelector value={movieSort} onValueChange={onSetMovieSort} />
           
-        
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={movieGenreFilter} onValueChange={onSetMovieGenreFilter}>
-              {/* Reduced width on mobile, and display short placeholder text */}
-              <SelectTrigger className="w-[100px] sm:w-[180px] glass-card">
-                <span className="hidden sm:inline">
-                    <SelectValue placeholder="All genres" />
-                </span>
-                <span className="sm:hidden">
-                    <SelectValue placeholder="Genre" /> 
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All genres</SelectItem>
-                {movieGenres.map(genre => (
-                  <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* UX IMPROVEMENT: Show item count when filter is active */}
-            {movieGenreFilter !== "all" && (
-              <>
-                {/* Badge showing the count of filtered items */}
-                <Badge 
-                  variant="outline" 
-                  className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/30 hidden sm:inline-flex"
-                >
-                  {totalItems} Items
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onSetMovieGenreFilter("all")}
-                  className="glass-card"
-                >
-                  Clear
-                </Button>
-              </>
-            )}
-            
-          </div>
-          
-       
-          <SortSelector value={movieSort} onValueChange={onSetMovieSort} />
-          
-          <AddMovieDialog onAddMovie={onAddMovie} />
+            {/* Add Button */}
+            <AddMovieDialog onAddMovie={onAddMovie} />
         </div>
       </div>
       <div className="grid grid-cols-3 lg:grid-cols-5 gap-4">
