@@ -79,15 +79,6 @@ export const WatchlistCard = ({ item, onRemove, onShowDetails, onMarkWatched }: 
                     ⭐ {item.imdbRating}
                 </Badge>
             )}
-            <Badge 
-                className={`text-xs ${
-                    item.type === 'movie' 
-                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
-                      : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-                }`}
-            >
-                {item.type === 'movie' ? 'Movie' : 'TV Show'}
-            </Badge>
         </div>
       </div>
     </Card>

@@ -77,17 +77,16 @@ export const TVShowCard = ({ show, onRemove, onShowDetails, onEdit }: TVShowCard
         <h3 className="text-sm sm:text-lg font-semibold mb-0 truncate w-full">{show.title}</h3>
         <p className="text-xs text-muted-foreground mb-1 sm:mb-3">{progressText}</p>
         <div className="flex items-center gap-1">
-            {/* NEW: Show IMDB Rating (Overall Rating) on card */}
+         
             {show.imdbRating && show.imdbRating !== "N/A" && (
-                <Badge variant="outline" className="text-xs px-1 py-0 bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                <Badge variant="outline" className="text-xs px-1 py-0">
                     ⭐ {show.imdbRating}
                 </Badge>
             )}
              {show.isFavorite && (
-                <Badge className="text-xs bg-red-500/20 text-red-400 border-red-500/30 px-1 py-0">
-                    <Heart className="h-3 w-3 fill-red-400 mr-1" />
-                    Fav
-                </Badge>
+               
+                    <Heart className="h-3 w-3 fill-red-400 mr-1 border-0 " />
+      
             )}
         </div>
       </div>
