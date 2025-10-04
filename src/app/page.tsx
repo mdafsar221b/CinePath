@@ -8,17 +8,15 @@ import { Header } from "@/components/layout/Header";
 import { DetailsDialog } from "@/components/modals/DetailsDialog";
 import { EditMovieDialog } from "@/components/modals/EditMovieDialog";
 import { EditTVShowDialog } from "@/components/modals/EditTVShowDialog";
-import { WatchlistSection } from "@/components/sections/WatchlistSection";
-import { MovieSection } from "@/components/sections/MovieSection";
-import { TVShowSection } from "@/components/sections/TVShowSection";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { useState } from "react";
-import { Loader2 } from "lucide-react"; 
+import { Loader2, ArrowRight } from "lucide-react"; 
 import { StatsDashboardDialog } from "@/components/modals/StatsDashboardDialog";
-import { Card } from "@/components/ui/card"; 
-import { Badge } from "@/components/ui/badge"; 
-import Image from "next/image"; 
+import { TrendingSection } from "@/components/sections/TrendingSection";
 import { LoggedOutFeatureShowcase } from "@/components/sections/LoggedOutFeatureShowcase";
+import { Button } from "@/components/ui/button"; 
+import Link from "next/link"; 
+import { Card } from "@/components/ui/card"; // Import Card
 
 
 import { SearchResult } from "@/lib/types"; 
@@ -28,59 +26,33 @@ const HomePage = () => {
     const {
         movies,
         tvShows,
-        watchlist,
-        filteredMovies,
-        filteredTVShows,
-        movieGenreFilter,
-        tvGenreFilter,
-        movieSort,
-        tvShowSort,
+        watchlist, 
+        
         detailsOpen,
         editMovieOpen,
         editTVShowOpen,
         selectedContent,
         movieToEdit,
         tvShowToEdit,
-        movieGenres,
-        tvGenres,
+        
         moviesByYear,
-        setMovieGenreFilter,
-        setTvGenreFilter,
-        setMovieSort,
-        setTvShowSort,
+        
         setDetailsOpen,
         setEditMovieOpen,
         setEditTVShowOpen,
         handleAddMovie,
-        handleRemoveMovie,
-        handleEditMovie,
-        handleUpdateMovie,
         handleAddTVShow,
-        handleRemoveTVShow,
-        handleEditTVShow,
-        handleUpdateTVShow,
-        handleRemoveFromWatchlist,
-        handleShowMovieDetails,
-        handleShowTVDetails,
-        handleShowWatchlistDetails,
-        handleMarkWatched,
-        fetchWatchlist,
         handleSelectContent,
         handleAddToWatchlist,
         isLoggedIn, 
         isLoadingSession, 
         
-        totalFilteredMovies,
-        totalFilteredTVShows,
-        itemsPerPage,
-        moviesPage,
-        setMoviesPage,
-        tvShowsPage,
-        setTvShowsPage,
-        
         totalEpisodesWatched, 
         totalTVShowsTracked, 
         totalSeasonsTracked, 
+        
+        handleUpdateMovie, 
+        handleUpdateTVShow,
     } = useCinePath();
     const [searchTerm, setSearchTerm] = useState("");
    
@@ -123,8 +95,6 @@ const HomePage = () => {
       />
     ) : null;
     
-    // NEW: Define combined loading state for sections
-    // If NextAuth is loading, or if the user is logged in and the lists are empty (meaning initial data fetch is in progress).
     const isInitialDataLoading = isLoggedIn && (movies.length === 0 && tvShows.length === 0 && watchlist.length === 0);
     const isSectionLoading = isLoadingSession || isInitialDataLoading;
 
@@ -142,69 +112,51 @@ const HomePage = () => {
                     addingToWatchlist={addingToWatchlist}
                     onSearchSubmit={handleSearch}
                     onAddMovie={handleAddMovie}
-                    // Updated prop signature for handleAddTVShow
-                    onAddTVShow={(id, title, poster_path) => handleAddTVShow(id, title, poster_path)}
+                    onAddTVShow={handleAddTVShow}
                     onSelectContent={handleSelectContent}
                     onAddToWatchlist={handleAddToWatchlistAndFeedback}
                     isLoggedIn={isLoggedIn}
                 />
 
                 <div className="container mx-auto px-4 md:px-8">
-                    {/* Show Feature Showcase only when the session check is COMPLETE and the user is NOT logged in */}
-                    {!isLoggedIn && !isLoadingSession && (
-                        <LoggedOutFeatureShowcase />
+                    
+                    {isLoggedIn && !isSectionLoading && (
+                        <div className="text-center pt-10 pb-16">
+                            <Card className="glass-card border-primary/20 bg-primary/5 p-6 md:p-10 max-w-2xl mx-auto">
+                                <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                                    Continue Your Journey
+                                </h2>
+                                <p className="text-lg text-muted-foreground mb-6">
+                                    Jump back into your Watchlist and manage all your tracked movies and shows.
+                                </p>
+                                <Button asChild>
+                                    <Link href="/dashboard">
+                                        Go to My Dashboard
+                                        <ArrowRight className="w-4 h-4 ml-2" />
+                                    </Link>
+                                </Button>
+                            </Card>
+                        </div>
                     )}
 
-                    {/* Show personalized content only if the check is COMPLETE and the user IS logged in */}
-                    {isLoggedIn ? (
-                        <div className="smooth-fade">
-                             <hr className="my-16 h-px border-0 bg-gradient-to-r from-transparent via-border to-transparent" /> 
-                            
-                            {/* Pass combined loading flag to sections */}
-                            <WatchlistSection
-                                watchlist={watchlist}
-                                onRemove={handleRemoveFromWatchlist}
-                                onShowDetails={handleShowWatchlistDetails}
-                                onMarkWatched={handleMarkWatched}
-                                isLoading={isSectionLoading}
-                            />
-                            <MovieSection
-                                filteredMovies={filteredMovies}
-                                movieGenres={movieGenres}
-                                movieGenreFilter={movieGenreFilter}
-                                movieSort={movieSort}
-                                onSetMovieGenreFilter={setMovieGenreFilter}
-                                onSetMovieSort={setMovieSort}
-                                onRemove={handleRemoveMovie}
-                                onShowDetails={handleShowMovieDetails}
-                                onEdit={handleEditMovie}
-                                currentPage={moviesPage}
-                                totalItems={totalFilteredMovies}
-                                itemsPerPage={itemsPerPage}
-                                onSetPage={setMoviesPage}
-                                onAddMovie={handleAddMovie}
-                                isLoading={isSectionLoading}
-                            />
-                            <TVShowSection
-                                filteredTVShows={filteredTVShows}
-                                tvGenres={tvGenres}
-                                tvGenreFilter={tvGenreFilter}
-                                tvShowSort={tvShowSort}
-                                onSetTvGenreFilter={setTvGenreFilter}
-                                onSetTvShowSort={setTvShowSort}
-                                onRemove={handleRemoveTVShow}
-                                onShowDetails={handleShowTVDetails}
-                                onEdit={handleEditTVShow}
-                                currentPage={tvShowsPage}
-                                totalItems={totalFilteredTVShows}
-                                itemsPerPage={itemsPerPage}
-                                onSetPage={setTvShowsPage}
-                               
-                                onAddTVShow={(id, title, poster_path) => handleAddTVShow(id, title, poster_path)}
-                                isLoading={isSectionLoading}
-                            />
-                        </div>
+                    {!isSectionLoading ? (
+                        <TrendingSection 
+                            onSelectContent={handleSelectContent}
+                            onAddToWatchlist={handleAddToWatchlistAndFeedback}
+                            addingToWatchlist={addingToWatchlist}
+                            isLoggedIn={isLoggedIn}
+                        />
                     ) : null}
+
+
+                    {!isLoggedIn && !isLoadingSession && (
+                        <div className="pt-16">
+                            <hr className="mb-16 h-px border-0 bg-gradient-to-r from-transparent via-border to-transparent" /> 
+                            <LoggedOutFeatureShowcase />
+                        </div>
+                    )}
+
+                    
                 </div>
                 <DetailsDialog
                     open={detailsOpen}

@@ -3,7 +3,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, X, LogOut, User as UserIcon, ListVideo, Film, Tv2, BarChart3, LogIn } from "lucide-react";
+import { Menu, X, LogOut, User as UserIcon, ListVideo, Film, Tv2, BarChart3, LogIn, TrendingUp, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,21 +25,30 @@ interface SidebarProps {
   dashboardButton: React.ReactNode;
 }
 
-const SidebarNavLink = ({ text, icon: Icon, onClick, asChild, children }: { 
+const SidebarNavLink = ({ text, icon: Icon, onClick, asChild, children, href }: { 
     text: string, 
     icon: React.ElementType, 
     onClick?: () => void, 
     asChild?: boolean, 
-    children?: React.ReactNode 
+    children?: React.ReactNode,
+    href?: string,
 }) => (
     <Button
         variant="ghost"
         onClick={onClick}
         className="w-full justify-start text-sm py-2 h-auto text-foreground/80 hover:bg-muted/50 rounded-xl"
-        asChild={asChild}
+        asChild={asChild || !!href}
     >
-        {asChild ? children : (
-            <div className="flex items-center gap-3">
+        {asChild || !!href ? (
+            <Link href={href || "#"} onClick={onClick}>
+                <div className="flex items-center gap-3">
+                    <Icon className="w-5 h-5 text-primary" />
+                    <span className="font-medium">{text}</span>
+                </div>
+                {children}
+            </Link>
+        ) : (
+             <div className="flex items-center gap-3">
                 <Icon className="w-5 h-5 text-primary" />
                 <span className="font-medium">{text}</span>
             </div>
@@ -64,29 +73,6 @@ export const Sidebar = ({ dashboardButton }: SidebarProps) => {
     email: session.user.email
   } : null;
 
-  const handleLinkClick = React.useCallback((hash: string) => {
-    router.push(`/#${hash}`);
-  }, [router]);
-
-  const DashboardLink = React.useMemo(() => (
-    dashboardButton ? (
-      <DialogClose asChild>
-          <SidebarNavLink text="Dashboard" icon={BarChart3} asChild>
-              {React.cloneElement(dashboardButton as React.ReactElement, {
-                  variant: 'ghost',
-                  className: 'w-full justify-start text-sm py-2 h-auto text-foreground/80 hover:bg-muted/50 rounded-xl',
-                  children: (
-                      <div className="flex items-center gap-3">
-                          <BarChart3 className="w-5 h-5 text-primary" />
-                          <span className="font-medium">Dashboard</span>
-                      </div>
-                  )
-              })}
-          </SidebarNavLink>
-      </DialogClose>
-    ) : null
-  ), [dashboardButton]);
-
   const LoggedInContent = React.useMemo(() => (
     <div className="flex flex-col space-y-6 flex-grow">
       
@@ -105,20 +91,77 @@ export const Sidebar = ({ dashboardButton }: SidebarProps) => {
       <div className="flex flex-col space-y-1">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 pt-2">Library</h4>
         
-        {DashboardLink}
-        
+        {/* ICON: ListVideo for My Content Page (General Content Dashboard) */}
         <DialogClose asChild>
-            <SidebarNavLink text="Watchlist" icon={ListVideo} onClick={() => handleLinkClick("watchlist")} />
+            <SidebarNavLink 
+                text="My Content" 
+                icon={ListVideo} 
+                href="/dashboard"
+                onClick={() => setOpen(false)} 
+            />
         </DialogClose>
         
+        {/* ICON: BarChart3 for Dashboard Stats (The Dialog) */}
+        {dashboardButton && (
+          <DialogClose asChild>
+            {React.cloneElement(dashboardButton as React.ReactElement, {
+              variant: 'ghost',
+              className: 'w-full justify-start text-sm py-2 h-auto text-foreground/80 hover:bg-muted/50 rounded-xl',
+              children: (
+                <div className="flex items-center gap-3">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    <span className="font-medium">Statistics & Totals</span>
+                </div>
+              )
+            })}
+          </DialogClose>
+        )}
+        
+        {/* ICON: Bookmark for Watchlist */}
         <DialogClose asChild>
-            <SidebarNavLink text="Movies Watched" icon={Film} onClick={() => handleLinkClick("movies")} />
+            <SidebarNavLink 
+                text="Watchlist" 
+                icon={Bookmark} 
+                href="/dashboard#watchlist"
+                onClick={() => setOpen(false)}
+            />
         </DialogClose>
         
+        {/* ICON: Film for Movies Watched */}
         <DialogClose asChild>
-            <SidebarNavLink text="TV Shows Watched" icon={Tv2} onClick={() => handleLinkClick("tv-shows")} />
+            <SidebarNavLink 
+                text="Movies Watched" 
+                icon={Film} 
+                href="/dashboard#movies"
+                onClick={() => setOpen(false)}
+            />
+        </DialogClose>
+        
+        {/* ICON: Tv2 for TV Shows Watched */}
+        <DialogClose asChild>
+            <SidebarNavLink 
+                text="TV Shows Watched" 
+                icon={Tv2} 
+                href="/dashboard#tv-shows"
+                onClick={() => setOpen(false)}
+            />
         </DialogClose>
       </div>
+      
+      <div className="flex flex-col space-y-1">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 pt-2">Discover</h4>
+        
+        <DialogClose asChild>
+            <SidebarNavLink 
+                text="Trending" 
+                icon={TrendingUp} 
+                href="/#trending-popular"
+                onClick={() => setOpen(false)} 
+            />
+        </DialogClose>
+        
+      </div>
+
 
       <div className="flex-grow" />
       
@@ -140,7 +183,7 @@ export const Sidebar = ({ dashboardButton }: SidebarProps) => {
         </Button>
       </div>
     </div>
-  ), [loggedInUser, DashboardLink, handleLogout, handleLinkClick]);
+  ), [loggedInUser, dashboardButton]);
 
   const LoggedOutContent = React.useMemo(() => (
     <div className="flex flex-col space-y-6 flex-grow pt-4">
@@ -161,6 +204,21 @@ export const Sidebar = ({ dashboardButton }: SidebarProps) => {
             </LoginDialog>
         </DialogClose>
       </div>
+      
+      <div className="flex flex-col space-y-1">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 pt-2">Discover</h4>
+        
+        <DialogClose asChild>
+            <SidebarNavLink 
+                text="Trending" 
+                icon={TrendingUp} 
+                href="/#trending-popular"
+                onClick={() => setOpen(false)} 
+            />
+        </DialogClose>
+        
+      </div>
+
       
       <div className="flex-grow" />
       
@@ -199,6 +257,7 @@ export const Sidebar = ({ dashboardButton }: SidebarProps) => {
           <DialogTitle className="text-xl font-bold">
             <Link href="/" onClick={() => setOpen(false)}>CinePath</Link>
           </DialogTitle>
+           {/* Removed second close button here. The DialogContent component provides one automatically. */}
         </DialogHeader>
 
         <div className="flex flex-col h-[calc(100%-65px)] overflow-y-auto p-4">
