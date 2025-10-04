@@ -30,7 +30,19 @@ export type SearchResult = {
   imdbRating?: string;
 }
 
-export type TrendingContent = SearchResult;
+export type TmdbDetailedContent = {
+  id: string;
+  title: string;
+  year: string; 
+  poster_path: string | null;
+  type: 'movie' | 'tv';
+  overview: string;
+  voteAverage: number;
+  genreIds: number[]; 
+  releaseDate: string;
+};
+
+export type TrendingContent = TmdbDetailedContent;
 
 export type Movie = {
   _id: string;

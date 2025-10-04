@@ -1,3 +1,4 @@
+// src/hooks/useCinePath.ts
 
 
 "use client";
@@ -37,7 +38,7 @@ export const useCinePath = () => {
         handleAddToWatchlist,
         handleRemoveFromWatchlist,
         handleMarkWatched,
-        fetchAndEnrichContentDetails, // This helper is needed by both Watchlist and UIDialogs
+        fetchAndEnrichContentDetails, 
     } = useWatchlistData({ isLoggedIn, fetchMovies, fetchTVShows });
 
 
@@ -45,6 +46,8 @@ export const useCinePath = () => {
     
     const {
         detailsOpen, setDetailsOpen,
+        tmdbDetailsOpen, setTmdbDetailsOpen, // NEW
+        selectedTmdbContent, // NEW
         editMovieOpen, setEditMovieOpen,
         editTVShowOpen, setEditTVShowOpen,
         selectedContent,
@@ -118,6 +121,8 @@ export const useCinePath = () => {
         
         // UI Dialogs & Editor State
         detailsOpen, setDetailsOpen,
+        tmdbDetailsOpen, setTmdbDetailsOpen, // NEW EXPORT
+        selectedTmdbContent, // NEW EXPORT
         editMovieOpen, setEditMovieOpen,
         editTVShowOpen, setEditTVShowOpen,
         selectedContent, movieToEdit, tvShowToEdit,

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Movie, TVShow, DetailedContent, WatchlistItem, SearchResult } from "@/lib/types";
+import { Movie, TVShow, DetailedContent, WatchlistItem, SearchResult, TmdbDetailedContent } from "@/lib/types";
 
 interface UIDialogDependencies {
     fetchAndEnrichContentDetails: (item: WatchlistItem | SearchResult) => Promise<any>;
@@ -11,13 +11,18 @@ interface UIDialogDependencies {
 export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependencies) => {
     
     const [detailsOpen, setDetailsOpen] = useState(false);
+    const [tmdbDetailsOpen, setTmdbDetailsOpen] = useState(false); // NEW STATE
     const [editMovieOpen, setEditMovieOpen] = useState(false);
     const [editTVShowOpen, setEditTVShowOpen] = useState(false);
     
+    // OMDb/Internal Content for Edit/Details
     const [selectedContent, setSelectedContent] = useState<(DetailedContent & Partial<Movie> & Partial<TVShow> & {
         seriesStructure?: any; 
         favoriteEpisodeIds?: string[];
     }) | null>(null);
+    
+    // TMDb Content for Details Dialog
+    const [selectedTmdbContent, setSelectedTmdbContent] = useState<TmdbDetailedContent | null>(null); // NEW STATE
     
     const [movieToEdit, setMovieToEdit] = useState<Movie | null>(null);
     const [tvShowToEdit, setTvShowToEdit] = useState<TVShow | null>(null);
@@ -102,6 +107,7 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
     };
     
     const handleShowWatchlistDetails = async (item: WatchlistItem) => {
+        // OMDb-based flow (for existing Watchlist items)
         const enrichedItem = await fetchAndEnrichContentDetails(item);
 
         const detailedContent: DetailedContent = {
@@ -121,31 +127,42 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
         setDetailsOpen(true);
     };
 
-    const handleSelectContent = async (result: SearchResult) => {
-        const enrichedResult = await fetchAndEnrichContentDetails(result);
+    const handleSelectContent = async (result: SearchResult | TmdbDetailedContent) => {
+        // Check if the content is from TMDb (Trending/Popular) or OMDb (Search)
+        if ('voteAverage' in result) {
+            // TMDb ISOLATED FLOW
+            setSelectedTmdbContent(result as TmdbDetailedContent);
+            setTmdbDetailsOpen(true);
+        } else {
+            // OMDb/Search FLOW (relies on fetchAndEnrichContentDetails)
+            const enrichedResult = await fetchAndEnrichContentDetails(result as SearchResult);
 
-        const contentForDetails: (DetailedContent & Partial<Movie> & Partial<TVShow>) = {
-            id: enrichedResult.id,
-            title: enrichedResult.title,
-            year: parseInt(enrichedResult.year || "0") || 0,
-            poster_path: enrichedResult.poster_path || null,
-            genre: enrichedResult.genre || "N/A", 
-            plot: enrichedResult.plot || "N/A",
-            rating: enrichedResult.rating || "N/A",
-            actors: enrichedResult.actors || "N/A",
-            director: (enrichedResult as any).director || "N/A",
-            imdbRating: enrichedResult.imdbRating || "N/A",
-            type: enrichedResult.type,
-        };
+            const contentForDetails: (DetailedContent & Partial<Movie> & Partial<TVShow>) = {
+                id: enrichedResult.id,
+                title: enrichedResult.title,
+                year: parseInt(enrichedResult.year || "0") || 0,
+                poster_path: enrichedResult.poster_path || null,
+                genre: enrichedResult.genre || "N/A", 
+                plot: enrichedResult.plot || "N/A",
+                rating: enrichedResult.rating || "N/A",
+                actors: enrichedResult.actors || "N/A",
+                director: (enrichedResult as any).director || "N/A",
+                imdbRating: enrichedResult.imdbRating || "N/A",
+                type: enrichedResult.type,
+            };
 
-        setSelectedContent(contentForDetails);
-        setDetailsOpen(true);
+            setSelectedContent(contentForDetails);
+            setDetailsOpen(true);
+        }
        
     };
 
     return {
         detailsOpen,
         setDetailsOpen,
+        tmdbDetailsOpen, // NEW EXPORT
+        setTmdbDetailsOpen, // NEW EXPORT
+        selectedTmdbContent, // NEW EXPORT
         editMovieOpen,
         setEditMovieOpen,
         editTVShowOpen,

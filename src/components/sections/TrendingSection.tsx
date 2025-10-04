@@ -2,26 +2,23 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { TrendingContent, SearchResult } from "@/lib/types";
+import { TrendingContent, SearchResult, TmdbDetailedContent } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { Film, MonitorPlay, Loader2, Plus, TrendingUp, Flame, Star, Zap } from "lucide-react";
+import { Loader2, Plus, TrendingUp, Flame, Star, Zap } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ContentSectionSkeleton } from "@/components/ui/SkeletonCard"; 
-
-interface EnrichedTrendingContent extends TrendingContent {
-    imdbRating?: string;
-    imdbID?: string;
-}
+import { cn } from "@/lib/utils";
 
 interface TrendingSectionProps {
-    onSelectContent: (result: SearchResult) => void;
+    onSelectContent: (result: TmdbDetailedContent) => void; // UPDATED TYPE
     onAddToWatchlist: (item: SearchResult) => Promise<void>;
     addingToWatchlist: string | null;
     isLoggedIn: boolean;
 }
 
+// NOTE: TrendingContent is now TmdbDetailedContent
 const TrendingCard = ({ 
     content, 
     onSelectContent, 
@@ -29,8 +26,8 @@ const TrendingCard = ({
     addingToWatchlist,
     isLoggedIn
 }: { 
-    content: EnrichedTrendingContent; 
-    onSelectContent: (result: SearchResult) => void; 
+    content: TmdbDetailedContent; 
+    onSelectContent: (result: TmdbDetailedContent) => void; 
     onAddToWatchlist: (item: SearchResult) => Promise<void>;
     addingToWatchlist: string | null;
     isLoggedIn: boolean;
@@ -38,7 +35,9 @@ const TrendingCard = ({
     
     const isAdding = addingToWatchlist === content.id;
     const isMovie = content.type === 'movie';
-    const imdbRating = content.imdbRating && content.imdbRating !== "N/A" ? content.imdbRating : null;
+    const displayRating = content.voteAverage > 0 ? content.voteAverage.toFixed(1) : 'N/A';
+    const ratingColor = content.voteAverage >= 7 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+
 
     return (
         <Card 
@@ -69,7 +68,7 @@ const TrendingCard = ({
                         <Button
                             size="icon"
                             onClick={(e) => {
-                                e.stopPropagation(); // Prevent opening details dialog
+                                e.stopPropagation(); 
                                 onAddToWatchlist(content);
                             }}
                             className="rounded-full h-8 w-8 p-0 bg-primary/80 hover:bg-primary hover:scale-110 shadow-md"
@@ -98,18 +97,19 @@ const TrendingCard = ({
                 <h3 className="text-sm sm:text-lg font-semibold mb-0 truncate w-full" title={content.title}>{content.title}</h3>
                 <p className="text-xs text-muted-foreground mb-1 sm:mb-3">{content.year}</p>
                 
-                {/* Rating Badge in place of old list button */}
+                {/* Rating Badge (TMDb Native Rating) */}
                 <div className="flex items-center justify-center gap-1 w-full h-5">
-                    {imdbRating && (
+                    {content.voteAverage > 0 ? (
                         <Badge 
                             variant="outline" 
-                            className="text-xs px-1 py-0 bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                            className={cn("text-xs px-1 py-0", ratingColor)}
                         >
-                            <Star className="w-3 h-3 mr-1 fill-yellow-400" /> 
-                            {imdbRating}
+                            <Star className="w-3 h-3 mr-1 fill-current" /> 
+                            {displayRating}
                         </Badge>
+                    ) : (
+                        <span className="text-xs text-muted-foreground">Rating N/A</span>
                     )}
-                    {!imdbRating && <span className="text-xs text-muted-foreground">N/A Rating</span>}
                 </div>
             </div>
         </Card>
@@ -118,9 +118,9 @@ const TrendingCard = ({
 
 
 export const TrendingSection = ({ onSelectContent, onAddToWatchlist, addingToWatchlist, isLoggedIn }: TrendingSectionProps) => {
-    // State to hold enriched data (with IMDb Rating)
-    const [trending, setTrending] = useState<EnrichedTrendingContent[]>([]);
-    const [popular, setPopular] = useState<EnrichedTrendingContent[]>([]);
+    
+    const [trending, setTrending] = useState<TmdbDetailedContent[]>([]);
+    const [popular, setPopular] = useState<TmdbDetailedContent[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchTMDbData = useCallback(async () => {
@@ -131,41 +131,12 @@ export const TrendingSection = ({ onSelectContent, onAddToWatchlist, addingToWat
                 fetch("/api/tmdb/popular")
             ]);
 
-            let trendingData: TrendingContent[] = trendingRes.ok ? await trendingRes.json() : [];
-            let popularData: TrendingContent[] = popularRes.ok ? await popularRes.json() : [];
+            let trendingData: TmdbDetailedContent[] = trendingRes.ok ? await trendingRes.json() : [];
+            let popularData: TmdbDetailedContent[] = popularRes.ok ? await popularRes.json() : [];
             
-            // --- Client-side enrichment for IMDb Rating (Trade-off for performance vs. data) ---
-            const enrichItems = async (items: TrendingContent[]) => {
-                const results = await Promise.all(items.slice(0, 12).map(async (item: TrendingContent) => {
-                    if (item.id) {
-                         try {
-                            // Re-use the multi-type detail fetch to get OMDb details (including rating/ID)
-                            const detailsRes = await fetch(`/api/details?id=${item.id}&type=${item.type === 'movie' ? 'movie' : 'series'}`);
-                            if (detailsRes.ok) {
-                                const details = await detailsRes.json();
-                                return {
-                                    ...item,
-                                    imdbRating: details.imdbRating,
-                                    imdbID: details.id,
-                                };
-                            }
-                         } catch (error) {
-                             // This is expected for some TMDb-only items without direct OMDb matches
-                         }
-                    }
-                    return item;
-                }));
-                return results as EnrichedTrendingContent[];
-            };
-            
-            const [enrichedTrending, enrichedPopular] = await Promise.all([
-                enrichItems(trendingData), 
-                enrichItems(popularData)
-            ]);
-            // --- End Enrichment ---
-
-            setTrending(enrichedTrending);
-            setPopular(enrichedPopular);
+            // NO ENRICHMENT: Use native TMDb data only
+            setTrending(trendingData);
+            setPopular(popularData);
 
         } catch (error) {
             console.error("Failed to fetch TMDb data:", error);
@@ -176,10 +147,10 @@ export const TrendingSection = ({ onSelectContent, onAddToWatchlist, addingToWat
 
     useEffect(() => {
         fetchTMDbData();
-    }, [fetchTMDbData]);
+    }, []);
     
-    const renderContent = (list: EnrichedTrendingContent[], title: string, Icon: React.ElementType) => {
-        const displayList = list.filter(Boolean).slice(0, 12); 
+    const renderContent = (list: TmdbDetailedContent[], title: string, Icon: React.ElementType) => {
+        const displayList = list.filter(Boolean); 
         
         if (displayList.length === 0) return null;
         

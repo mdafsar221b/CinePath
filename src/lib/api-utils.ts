@@ -151,7 +151,7 @@ export async function fetchOmdbData(query: string | null, type: 'movie' | 'serie
 
 /**
  * Fetches data from the TMDb API using the Read Access Token.
- * This is now integrated directly into the application's backend.
+ * Returns richer data (including overview and voteAverage) for isolation.
  */
 export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<TrendingContent[]> {
     const accessToken = process.env.TMDB_READ_ACCESS_TOKEN;
@@ -159,12 +159,10 @@ export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<T
         throw new Error("TMDB_READ_ACCESS_TOKEN is not set. Cannot fetch trending data.");
     }
     
-    // TMDb base URL and dynamic endpoint based on listType
     const url = listType === 'trending'
         ? `https://api.themoviedb.org/3/trending/all/day?language=en-US`
-        : `https://api.themoviedb.org/3/movie/popular?language=en-US&page=1`; 
+        : `https://api.themoviedb.org/3/movie/popular?language=en-US`; 
 
-    // Use TMDb Read Access Token for authorization
     const apiResponse = await fetch(url, {
         headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -184,7 +182,6 @@ export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<T
         return [];
     }
 
-    // Map TMDb results to the common SearchResult/TrendingContent format
     const content: TrendingContent[] = data.results
         .filter((item: any) => item.media_type !== 'person') 
         .map((item: any) => ({
@@ -193,6 +190,10 @@ export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<T
             year: (item.release_date || item.first_air_date)?.substring(0, 4) || 'N/A', 
             poster_path: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
             type: item.media_type === 'tv' ? 'tv' : 'movie',
+            overview: item.overview || 'No overview available from TMDb.',
+            voteAverage: item.vote_average ? parseFloat(item.vote_average.toFixed(1)) : 0,
+            genreIds: item.genre_ids || [],
+            releaseDate: item.release_date || item.first_air_date || 'N/A'
         }));
         
     return content.filter(item => item.title);

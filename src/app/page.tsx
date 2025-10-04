@@ -16,7 +16,8 @@ import { TrendingSection } from "@/components/sections/TrendingSection";
 import { LoggedOutFeatureShowcase } from "@/components/sections/LoggedOutFeatureShowcase";
 import { Button } from "@/components/ui/button"; 
 import Link from "next/link"; 
-import { Card } from "@/components/ui/card"; // Import Card
+import { Card } from "@/components/ui/card"; 
+import { TmdbDetailsDialog } from "@/components/modals/TmdbDetailsDialog"; // NEW IMPORT
 
 
 import { SearchResult } from "@/lib/types"; 
@@ -29,6 +30,10 @@ const HomePage = () => {
         watchlist, 
         
         detailsOpen,
+        setDetailsOpen,
+        tmdbDetailsOpen, // NEW
+        setTmdbDetailsOpen, // NEW
+        selectedTmdbContent, // NEW
         editMovieOpen,
         editTVShowOpen,
         selectedContent,
@@ -37,7 +42,7 @@ const HomePage = () => {
         
         moviesByYear,
         
-        setDetailsOpen,
+        // setDetailsOpen,
         setEditMovieOpen,
         setEditTVShowOpen,
         handleAddMovie,
@@ -158,10 +163,17 @@ const HomePage = () => {
 
                     
                 </div>
+                {/* OMDb Details Dialog (for watched/watchlist/search items) */}
                 <DetailsDialog
                     open={detailsOpen}
                     onOpenChange={setDetailsOpen}
                     content={selectedContent}
+                />
+                {/* TMDb Details Dialog (for trending/popular items) */}
+                <TmdbDetailsDialog
+                    open={tmdbDetailsOpen}
+                    onOpenChange={setTmdbDetailsOpen}
+                    content={selectedTmdbContent}
                 />
                 <EditMovieDialog
                     open={editMovieOpen}
