@@ -127,7 +127,7 @@ const DashboardPage = () => {
                         </Link>
                         
                         <h1 className="text-4xl md:text-5xl font-bold mt-4 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
-                            My Content Dashboard
+                            My Content
                         </h1>
                     </div>
                     

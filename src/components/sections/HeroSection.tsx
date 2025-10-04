@@ -99,7 +99,7 @@ export const HeroSection = ({
         >
            
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight">
-                {`Welcome Back, ${firstName}`}
+                {`Welcome, ${firstName}`}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-2xl mx-auto leading-relaxed">
                 Track movies, discover shows, and curate your perfect watchlist

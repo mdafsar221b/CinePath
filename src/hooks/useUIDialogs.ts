@@ -4,22 +4,16 @@
 import { useState } from "react";
 import { Movie, TVShow, DetailedContent, WatchlistItem, SearchResult } from "@/lib/types";
 
-// Interface for dependencies needed from the master hook
 interface UIDialogDependencies {
     fetchAndEnrichContentDetails: (item: WatchlistItem | SearchResult) => Promise<any>;
 }
 
-/**
- * Custom hook to manage all UI state related to Dialogs (open/close flags)
- * and the content currently selected for viewing or editing.
- */
 export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependencies) => {
     
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [editMovieOpen, setEditMovieOpen] = useState(false);
     const [editTVShowOpen, setEditTVShowOpen] = useState(false);
     
-    // The unified content object passed to DetailsDialog
     const [selectedContent, setSelectedContent] = useState<(DetailedContent & Partial<Movie> & Partial<TVShow> & {
         seriesStructure?: any; 
         favoriteEpisodeIds?: string[];
@@ -52,7 +46,6 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
         let enrichedShow = show;
         const isDetailsMissing = !show.genre || show.genre === 'N/A' || !show.actors || show.actors === 'N/A' || !show.imdbRating || show.imdbRating === 'N/A';
          
-        // 1. Enrich base OMDb fields if missing (Genre, Actors, IMDb Rating)
         if (isDetailsMissing && show.id) {
              try {
                 const detailsRes = await fetch(`/api/details?id=${show.id}&type=series`);
@@ -73,7 +66,6 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
              }
          }
         
-        // 2. Fetch the full series structure for episode display
         let seriesStructure = null;
         if (enrichedShow.id) {
             try {
@@ -110,7 +102,6 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
     };
     
     const handleShowWatchlistDetails = async (item: WatchlistItem) => {
-        // Use the generic enricher here (provided via dependency injection)
         const enrichedItem = await fetchAndEnrichContentDetails(item);
 
         const detailedContent: DetailedContent = {
