@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import {
@@ -13,13 +11,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect, useMemo } from "react";
-import { TVShow } from "@/lib/types"; 
+// IMPORTED TVShowCategory
+import { TVShow, TVShowCategory } from "@/lib/types"; 
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ChevronDown, ChevronUp, Heart } from "lucide-react"; 
 import { cn } from "@/lib/utils"; 
 import toast from "react-hot-toast";
+import { // ADDED
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"; 
+
+// NEW CONSTANT
+const TV_SHOW_CATEGORIES: TVShowCategory[] = ['Regular Series', 'Miniseries', 'Hindi Tv shows']; 
 
 // NOTE: Since Collapsible is not provided as a separate UI component,
 // this custom wrapper is used to provide the required functionality.
@@ -70,6 +79,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const [myRating, setMyRating] = useState<number | null>(null);
   const [personalNotes, setPersonalNotes] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [userCategory, setUserCategory] = useState<TVShowCategory | null>(null); // NEW STATE
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]); 
   
@@ -84,6 +94,8 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
       setMyRating(show.myRating || null);
       setPersonalNotes(show.personalNotes || "");
       setIsFavorite(show.isFavorite || false);
+      // NEW: Set initial category state, defaulting to 'Regular Series'
+      setUserCategory(show.userCategory || 'Regular Series'); 
       setWatchedIds(show.watchedEpisodeIds || []);
       setFavoriteIds(show.favoriteEpisodeIds || []); 
       
@@ -120,7 +132,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   // HANDLER: COMBINES ALL SAVING INTO ONE FUNCTION
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!show) return;
+    if (!show || !userCategory) return;
 
     setIsSaving(true);
     
@@ -140,6 +152,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
       myRating,
       personalNotes,
       isFavorite,
+      userCategory, // ADDED
       watchedEpisodeIds: watchedIds, 
       favoriteEpisodeIds: favoriteIds, 
       totalEpisodes: totalEpisodesPayload, 
@@ -251,6 +264,28 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                 max="10"
                 />
             </div>
+            
+            {/* NEW: Category Selector */}
+            <div className="space-y-2">
+                <Label htmlFor="category-select" className="text-sm font-medium">Series Category</Label>
+                <Select 
+                    // Use a fallback value if userCategory is null for controlled component
+                    value={userCategory || 'Regular Series'} 
+                    onValueChange={(value: TVShowCategory) => setUserCategory(value)}
+                >
+                    <SelectTrigger className="glass-card border-border/50 rounded-xl">
+                        <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {TV_SHOW_CATEGORIES.map((category) => (
+                            <SelectItem key={category} value={category}>
+                                {category}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            
             <div className="space-y-2">
                 <Label htmlFor="personalNotes" className="text-sm font-medium">Personal Notes</Label>
                 <Textarea

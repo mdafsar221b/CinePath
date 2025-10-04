@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -34,6 +35,8 @@ export const SortSelector = ({ value, onValueChange }: SortSelectorProps) => {
         <SelectItem value="imdbRating_asc">Rating-Lowest</SelectItem>
         <SelectItem value="year_desc">Newest</SelectItem>
         <SelectItem value="year_asc">Oldest</SelectItem>
+        <SelectItem value="category_asc">Category A-Z</SelectItem> // ADDED
+        <SelectItem value="category_desc">Category Z-A</SelectItem> // ADDED
       </SelectContent>
     </Select>
   );

@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Movie, TVShow, WatchlistItem, SortOption } from "@/lib/types";
+import { Movie, TVShow, WatchlistItem, SortOption, TVShowCategory } from "@/lib/types"; // IMPORTED TVShowCategory
 import { sortContent } from "@/lib/utils";
 
 
@@ -36,12 +36,37 @@ export const useContentFilter = <T extends Content>({
             return true;
         }
 
-        // Special handling for 'favorites' on TV Shows
-        if (filterKey === 'isFavorite' && filter === 'favorites') {
-            return (item as TVShow).isFavorite === true;
+        // --- TV SHOW SPECIFIC FILTERING (filterKey: 'isFavorite' used to denote TV show filtering) ---
+        if (filterKey === 'isFavorite') {
+            const tvShow = item as TVShow;
+            
+            // 1. Filter by 'favorites'
+            if (filter === 'favorites') {
+                return tvShow.isFavorite === true;
+            }
+            
+            // 2. Filter by explicit categories (Miniseries, Hindi Tv shows, Regular Series)
+            const categoryFilters: TVShowCategory[] = ['Miniseries', 'Hindi Tv shows', 'Regular Series'];
+            
+            if (categoryFilters.includes(filter as TVShowCategory)) {
+                const categoryFilter = filter as TVShowCategory;
+                
+                // Explicit categories: must match exactly
+                if (categoryFilter === 'Miniseries' || categoryFilter === 'Hindi Tv shows') {
+                    return tvShow.userCategory === categoryFilter;
+                }
+                
+                // Regular Series: includes explicitly set or undefined/null (default)
+                if (categoryFilter === 'Regular Series') {
+                    return tvShow.userCategory === 'Regular Series' || tvShow.userCategory === undefined || tvShow.userCategory === null;
+                }
+            }
+            
+            // 3. Fallback to standard genre matching (for other filters like 'Action', 'Drama', etc.)
+            return tvShow.genre?.toLowerCase().includes(filter.toLowerCase());
         }
 
-        // Standard genre matching
+        // Standard genre matching (for Movies)
         if (filterKey === 'genre') {
             return item.genre?.toLowerCase().includes(filter.toLowerCase());
         }

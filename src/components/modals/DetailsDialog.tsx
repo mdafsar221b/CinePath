@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DetailedContent, Movie, TVShow } from "@/lib/types";
+import { DetailedContent, Movie, TVShow } from "@/lib/types"; 
 import { Badge } from "@/components/ui/badge";
 import { Star, Heart, FileText, User } from "lucide-react"; 
 import Image from "next/image";
@@ -62,6 +62,10 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
       ? new Date((content as TVShow).addedAt).getFullYear() 
       : 'N/A';
   
+  // NEW: Get category, defaulting to "Regular Series" if TV show and missing
+  const category = isTVShow 
+    ? (content as TVShow).userCategory || 'Regular Series' 
+    : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,6 +114,21 @@ export const DetailsDialog = ({ open, onOpenChange, content }: DetailsDialogProp
               >
                 {content.type === 'movie' ? 'Movie' : 'TV Show'}
               </Badge>
+              
+              {/* NEW: TV Show Category Badge */}
+              {isTVShow && category && category !== 'Regular Series' && (
+                 <Badge 
+                    className={`px-3 py-1 ${
+                      category === 'Hindi Tv shows' 
+                        ? 'bg-red-500/20 text-red-400 border-red-500/30' 
+                        : category === 'Miniseries'
+                            ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' 
+                            : 'bg-primary/20 text-primary border-primary/30' 
+                    }`}
+                 >
+                   {category}
+                 </Badge>
+              )}
               
               {/* IMDb Rating */}
               {content.imdbRating && content.imdbRating !== "N/A" && (

@@ -8,6 +8,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectLabel,
+  SelectSeparator,
+  SelectGroup, // ADDED
 } from "@/components/ui/select";
 import { SortSelector } from "@/components/ui/sort-selector";
 import { ChevronLeft, ChevronRight, Tv2 } from "lucide-react";
@@ -102,31 +105,48 @@ export const TVShowSection = ({
           {/* Filter Selector Group */}
           <div className="flex items-center gap-2 flex-grow-0">
             <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">
-              Filter by genre:
+              Filter by:
             </span>
 
             <Select value={tvGenreFilter} onValueChange={onSetTvGenreFilter}>
               {/* Fixed small width for filter dropdown */}
               <SelectTrigger className="w-[120px] glass-card">
-                <SelectValue placeholder="Genre" />
+                <SelectValue placeholder="Filter" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All genres</SelectItem>
-                {/* NEW FILTER OPTION */}
+                <SelectItem value="all">All</SelectItem>
+                
+                {/* FAVORITES FILTER */}
                 <SelectItem
                   value="favorites"
                   className="font-semibold text-red-500"
                 >
                   Favorites
                 </SelectItem>
-
-                {tvGenres
-                  .filter((genre) => genre !== "favorites")
-                  .map((genre) => (
-                    <SelectItem key={genre} value={genre}>
-                      {genre}
-                    </SelectItem>
-                  ))}
+                
+                <SelectSeparator />
+                
+                <SelectGroup> {/* WRAPPED Categories in SelectGroup */}
+                  {/* NEW CATEGORY FILTERS */}
+                  <SelectLabel>Categories</SelectLabel>
+                  <SelectItem value="Regular Series">Regular Series</SelectItem>
+                  <SelectItem value="Miniseries">Miniseries</SelectItem>
+                  <SelectItem value="Hindi Tv shows">Hindi Tv shows</SelectItem>
+                </SelectGroup>
+                
+                <SelectSeparator />
+                
+                <SelectGroup> {/* WRAPPED Genres in SelectGroup */}
+                  {/* GENRE FILTERS */}
+                  <SelectLabel>Genres</SelectLabel>
+                  {tvGenres
+                    .filter((genre) => genre !== "favorites" && genre !== "Regular Series" && genre !== "Miniseries" && genre !== "Hindi Tv shows")
+                    .map((genre) => (
+                      <SelectItem key={genre} value={genre}>
+                        {genre}
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
 

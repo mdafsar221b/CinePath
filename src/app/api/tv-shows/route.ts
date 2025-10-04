@@ -2,7 +2,6 @@ import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromSession } from "@/lib/auth-utils";
-import { fetchOmdbData } from "@/lib/api-utils";
 
 export async function GET() {
     try {
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
         const db = client.db("cinepath");
         const body = await request.json();
         
-        let { 
+        const { 
             id, 
             title, 
             poster_path, 
@@ -41,27 +40,12 @@ export async function POST(request: NextRequest) {
             imdbRating, 
             myRating, 
             personalNotes, 
-            isFavorite 
+            isFavorite,
+            userCategory // ADDED
         } = body;
 
         if (!id) {
             return NextResponse.json({ error: "TV Show requires a unique ID." }, { status: 400 });
-        }
-
-        // Server-Side Enrichment: Fetch missing details and save them to MongoDB
-        if (!genre || !actors || !imdbRating) {
-             try {
-                const enrichedData = await fetchOmdbData(null, 'series', id);
-                
-                genre = enrichedData.genre || genre;
-                plot = enrichedData.plot || plot;
-                rating = enrichedData.rating || rating;
-                actors = enrichedData.actors || actors;
-                imdbRating = enrichedData.imdbRating || imdbRating;
-                
-            } catch (error) {
-                console.warn(`Could not enrich TV show details for ID ${id}. Saving basic info.`, error);
-            }
         }
 
         const findQuery = { id, userId };
@@ -80,6 +64,7 @@ export async function POST(request: NextRequest) {
             ...(myRating !== undefined && { myRating }),
             ...(personalNotes !== undefined && { personalNotes }),
             isFavorite: isFavorite !== undefined ? isFavorite : existingShow?.isFavorite || false,
+            userCategory: userCategory !== undefined ? userCategory : (existingShow?.userCategory || 'Regular Series'), // ADDED: Use incoming, existing, or default
         };
 
         if (existingShow) {
@@ -128,7 +113,8 @@ export async function PUT(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { _id, myRating, personalNotes, isFavorite, watchedEpisodeIds, favoriteEpisodeIds, totalEpisodes, trackedSeasonCount } = body; 
+        // ADDED: userCategory to destructuring
+        const { _id, myRating, personalNotes, isFavorite, watchedEpisodeIds, favoriteEpisodeIds, totalEpisodes, trackedSeasonCount, userCategory } = body; 
 
         if (!_id) {
             return NextResponse.json({ error: "ID is required to update" }, { status: 400 });
@@ -154,6 +140,10 @@ export async function PUT(request: NextRequest) {
         
         if (trackedSeasonCount !== undefined) { 
              updateData.trackedSeasonCount = trackedSeasonCount;
+        }
+
+        if (userCategory !== undefined) { // ADDED
+            updateData.userCategory = userCategory;
         }
 
         const result = await db.collection("tv_shows").updateOne(

@@ -81,6 +81,8 @@ export type OMDBSummary = {
   imdbID: string;
 };
 
+export type TVShowCategory = 'Miniseries' | 'Hindi Tv shows' | 'Regular Series';
+
 export type TVShow = {
   _id: string;
   id: string; 
@@ -100,7 +102,7 @@ export type TVShow = {
   personalNotes?: string; 
   isFavorite?: boolean; 
   userId: string; 
-  
+  userCategory?: TVShowCategory | null; // ADDED
 };
 
 export type DetailedContent = {
@@ -133,6 +135,7 @@ export type WatchlistItem = {
   imdbRating?: string;
   addedAt: Date;
   userId: string; 
+  userCategory?: TVShowCategory | null; // ADDED
 };
 export type SortOption =
   | "addedAt_desc"
@@ -142,4 +145,6 @@ export type SortOption =
   | "imdbRating_desc"
   | "imdbRating_asc"
   | "year_desc"
-  | "year_asc";
+  | "year_asc"
+  | "category_asc" // ADDED
+  | "category_desc"; // ADDED

@@ -1,5 +1,3 @@
-
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Movie, TVShow, WatchlistItem, SortOption } from "./types"
@@ -37,6 +35,16 @@ export const sortContent = <T extends Movie | TVShow | WatchlistItem>(content: T
                 const aYearAsc = 'year' in a && typeof a.year === 'number' ? a.year : new Date(a.addedAt).getFullYear();
                 const bYearAsc = 'year' in b && typeof b.year === 'number' ? b.year : new Date(b.addedAt).getFullYear();
                 return (aYearAsc ?? 0) - (bYearAsc ?? 0);
+            case "category_asc": // ADDED
+                // Sort by userCategory, treating null/undefined as 'Regular Series'
+                const aCatAsc = ('userCategory' in a && a.userCategory) ? a.userCategory : 'Regular Series';
+                const bCatAsc = ('userCategory' in b && b.userCategory) ? b.userCategory : 'Regular Series';
+                return aCatAsc.localeCompare(bCatAsc);
+            case "category_desc": // ADDED
+                // Sort by userCategory, treating null/undefined as 'Regular Series'
+                const aCatDesc = ('userCategory' in a && a.userCategory) ? a.userCategory : 'Regular Series';
+                const bCatDesc = ('userCategory' in b && b.userCategory) ? b.userCategory : 'Regular Series';
+                return bCatDesc.localeCompare(aCatDesc);
             default:
                 return 0;
         }
