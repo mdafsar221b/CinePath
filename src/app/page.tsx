@@ -1,231 +1,164 @@
-// src/app/page.tsx
-
-
+// src/hooks/useUIDialogs.ts
 "use client";
 
-import { useCinePath } from "@/hooks/useCinePath";
-import { Header } from "@/components/layout/Header";
-import { DetailsDialog } from "@/components/modals/DetailsDialog";
-import { EditMovieDialog } from "@/components/modals/EditMovieDialog";
-import { EditTVShowDialog } from "@/components/modals/EditTVShowDialog";
-import { WatchlistSection } from "@/components/sections/WatchlistSection";
-import { MovieSection } from "@/components/sections/MovieSection";
-import { TVShowSection } from "@/components/sections/TVShowSection";
-import { HeroSection } from "@/components/sections/HeroSection";
 import { useState } from "react";
-import { Loader2 } from "lucide-react"; 
-import { StatsDashboardDialog } from "@/components/modals/StatsDashboardDialog";
-import { Card } from "@/components/ui/card"; 
-import { Badge } from "@/components/ui/badge"; 
-import Image from "next/image"; 
-import { LoggedOutFeatureShowcase } from "@/components/sections/LoggedOutFeatureShowcase";
+import { Movie, TVShow, DetailedContent, WatchlistItem, SearchResult } from "@/lib/types";
+import { mapDetailedContent, fetchTMDBSeriesStructure } from "@/lib/tmdb-mapper"; 
 
+interface UIDialogDependencies {
+    fetchAndEnrichContentDetails: (item: WatchlistItem | SearchResult) => Promise<any>;
+}
 
-import { SearchResult } from "@/lib/types"; 
+export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependencies) => {
+    
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [editMovieOpen, setEditMovieOpen] = useState(false);
+    const [editTVShowOpen, setEditTVShowOpen] = useState(false);
+    
+    const [selectedContent, setSelectedContent] = useState<(DetailedContent & Partial<Movie> & Partial<TVShow> & {
+        seriesStructure?: any; 
+        favoriteEpisodeIds?: string[];
+    }) | null>(null);
+    
+    const [movieToEdit, setMovieToEdit] = useState<Movie | null>(null);
+    const [tvShowToEdit, setTvShowToEdit] = useState<TVShow | null>(null);
 
+    const handleShowMovieDetails = async (movie: Movie) => {
+        const detailedContent = {
+            tmdbId: movie.tmdbId,
+            imdbId: movie.imdbId,
+            title: movie.title,
+            year: movie.year,
+            poster_path: movie.poster_path || null,
+            genre: movie.genre || "N/A",
+            plot: movie.plot || "N/A",
+            rating: movie.rating || "N/A",
+            actors: movie.actors || "N/A",
+            director: movie.director || "N/A",
+            imdbRating: movie.imdbRating || "N/A",
+            type: 'movie' as 'movie',
+            myRating: movie.myRating,
+            personalNotes: movie.personalNotes,
+        };
+        setSelectedContent(detailedContent);
+        setDetailsOpen(true);
+    };
 
-const HomePage = () => {
-    const {
-        movies,
-        tvShows,
-        watchlist,
-        filteredMovies,
-        filteredTVShows,
-        movieGenreFilter,
-        tvGenreFilter,
-        movieSort,
-        tvShowSort,
+    const handleShowTVDetails = async (show: TVShow) => {
+        let enrichedShow = show;
+        const isDetailsMissing = !show.genre || show.genre === 'N/A' || !show.actors || show.actors === 'N/A' || !show.imdbRating || show.imdbRating === 'N/A';
+         
+        // 1. Enrich base details if missing
+        if (isDetailsMissing && show.tmdbId) {
+             try {
+                const details = await mapDetailedContent(show.tmdbId, 'tv');
+                enrichedShow = {
+                    ...show,
+                    ...details,
+                    tmdbId: show.tmdbId, 
+                } as TVShow;
+             } catch (error) {
+                 console.error("Error fetching missing TV show details:", error);
+             }
+         }
+        
+        // 2. Fetch the full series structure for episode display
+        let seriesStructure = null;
+        if (enrichedShow.tmdbId) {
+            try {
+                seriesStructure = await fetchTMDBSeriesStructure(enrichedShow.tmdbId);
+            } catch (error) {
+                console.error("Error fetching series structure for details:", error);
+            }
+        }
+        
+        // FIX: Access properties on the potentially merged object using 'as any'
+        const yearFromEnriched = (enrichedShow as any).year && (enrichedShow as any).year > 0 
+            ? (enrichedShow as any).year 
+            : new Date(enrichedShow.addedAt).getFullYear();
+        
+        const detailedContent = {
+            tmdbId: enrichedShow.tmdbId, 
+            imdbId: (enrichedShow as any).imdbId, 
+            title: enrichedShow.title,
+            year: yearFromEnriched, 
+            poster_path: enrichedShow.poster_path || null,
+            genre: enrichedShow.genre || "N/A",
+            plot: enrichedShow.plot || "N/A",
+            rating: enrichedShow.rating || "N/A",
+            actors: enrichedShow.actors || "N/A",
+            imdbRating: enrichedShow.imdbRating || "N/A",
+            type: 'tv' as 'tv',
+            myRating: enrichedShow.myRating,
+            personalNotes: enrichedShow.personalNotes,
+            isFavorite: enrichedShow.isFavorite,
+            favoriteEpisodeIds: enrichedShow.favoriteEpisodeIds, 
+            seriesStructure: seriesStructure, 
+        };
+        setSelectedContent(detailedContent);
+        setDetailsOpen(true);
+    };
+    
+    const handleShowWatchlistDetails = async (item: WatchlistItem) => {
+        // Use the generic enricher here (provided via dependency injection)
+        const enrichedItem = await fetchAndEnrichContentDetails(item);
+
+        const detailedContent: DetailedContent = {
+            tmdbId: enrichedItem.tmdbId,
+            imdbId: enrichedItem.imdbId,
+            title: enrichedItem.title,
+            year: parseInt(enrichedItem.year || "0") || 0,
+            poster_path: enrichedItem.poster_path || null,
+            genre: enrichedItem.genre || "N/A",
+            plot: enrichedItem.plot || "N/A",
+            rating: enrichedItem.rating || "N/A",
+            actors: enrichedItem.actors || "N/A",
+            director: (enrichedItem as any).director || "N/A",
+            imdbRating: enrichedItem.imdbRating || "N/A",
+            type: enrichedItem.type
+        };
+        setSelectedContent(detailedContent);
+        setDetailsOpen(true);
+    };
+
+    const handleSelectContent = async (result: SearchResult) => {
+        const enrichedResult = await fetchAndEnrichContentDetails(result);
+
+        const contentForDetails: (DetailedContent & Partial<Movie> & Partial<TVShow>) = {
+            tmdbId: enrichedResult.tmdbId,
+            imdbId: enrichedResult.imdbId,
+            title: enrichedResult.title,
+            year: parseInt(enrichedResult.year || "0") || 0,
+            poster_path: enrichedResult.poster_path || null,
+            genre: enrichedResult.genre || "N/A", 
+            plot: enrichedResult.plot || "N/A",
+            rating: enrichedResult.rating || "N/A",
+            actors: enrichedResult.actors || "N/A",
+            director: (enrichedResult as any).director || "N/A",
+            imdbRating: enrichedResult.imdbRating || "N/A",
+            type: enrichedResult.type,
+        };
+
+        setSelectedContent(contentForDetails);
+        setDetailsOpen(true);
+       
+    };
+
+    return {
         detailsOpen,
+        setDetailsOpen,
         editMovieOpen,
+        setEditMovieOpen,
         editTVShowOpen,
+        setEditTVShowOpen,
         selectedContent,
         movieToEdit,
+        setMovieToEdit,
         tvShowToEdit,
-        movieGenres,
-        tvGenres,
-        moviesByYear,
-        setMovieGenreFilter,
-        setTvGenreFilter,
-        setMovieSort,
-        setTvShowSort,
-        setDetailsOpen,
-        setEditMovieOpen,
-        setEditTVShowOpen,
-        handleAddMovie,
-        handleRemoveMovie,
-        handleEditMovie,
-        handleUpdateMovie,
-        handleAddTVShow,
-        handleRemoveTVShow,
-        handleEditTVShow,
-        handleUpdateTVShow,
-        handleRemoveFromWatchlist,
+        setTvShowToEdit,
         handleShowMovieDetails,
         handleShowTVDetails,
         handleShowWatchlistDetails,
-        handleMarkWatched,
-        fetchWatchlist,
         handleSelectContent,
-        handleAddToWatchlist,
-        isLoggedIn, 
-        isLoadingSession, 
-        
-        totalFilteredMovies,
-        totalFilteredTVShows,
-        itemsPerPage,
-        moviesPage,
-        setMoviesPage,
-        tvShowsPage,
-        setTvShowsPage,
-        
-        totalEpisodesWatched, 
-        totalTVShowsTracked, 
-        totalSeasonsTracked, 
-    } = useCinePath();
-    const [searchTerm, setSearchTerm] = useState("");
-   
-    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [addingToWatchlist, setAddingToWatchlist] = useState<string | null>(null);
-
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!searchTerm.trim()) return;
-    
-        setLoading(true);
-        try {
-          const res = await fetch(`/api/search/all?query=${encodeURIComponent(searchTerm)}`);
-          if (!res.ok) throw new Error("Failed to search");
-          
-          const data = await res.json();
-          setSearchResults(data.all || []);
-        } catch (error) {
-          console.error("Search error:", error);
-          setSearchResults([]);
-        } finally {
-          setLoading(false);
-        }
     };
-    
-    const handleAddToWatchlistAndFeedback = async (item: any) => {
-        setAddingToWatchlist(item.id);
-        await handleAddToWatchlist(item);
-        setAddingToWatchlist(null);
-    };
-
-    const dashboardStatsButton = isLoggedIn ? (
-      <StatsDashboardDialog 
-          movies={movies} 
-          moviesByYear={moviesByYear} 
-          totalEpisodesWatched={totalEpisodesWatched} 
-          totalTVShowsTracked={totalTVShowsTracked} 
-          totalSeasonsTracked={totalSeasonsTracked}
-      />
-    ) : null;
-    
-    // NEW: Define combined loading state for sections
-    // If NextAuth is loading, or if the user is logged in and the lists are empty (meaning initial data fetch is in progress).
-    const isInitialDataLoading = isLoggedIn && (movies.length === 0 && tvShows.length === 0 && watchlist.length === 0);
-    const isSectionLoading = isLoadingSession || isInitialDataLoading;
-
-
-    return (
-        <>
-            <Header dashboardButton={dashboardStatsButton} />
-            <main className="min-h-screen landing-background">
-                <HeroSection
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    setSearchResults={setSearchResults} 
-                    searchResults={searchResults}
-                    loading={loading}
-                    addingToWatchlist={addingToWatchlist}
-                    onSearchSubmit={handleSearch}
-                    onAddMovie={handleAddMovie}
-                    // Updated prop signature for handleAddTVShow
-                    onAddTVShow={(id, title, poster_path) => handleAddTVShow(id, title, poster_path)}
-                    onSelectContent={handleSelectContent}
-                    onAddToWatchlist={handleAddToWatchlistAndFeedback}
-                    isLoggedIn={isLoggedIn}
-                />
-
-                <div className="container mx-auto px-4 md:px-8">
-                    {/* Show Feature Showcase only when the session check is COMPLETE and the user is NOT logged in */}
-                    {!isLoggedIn && !isLoadingSession && (
-                        <LoggedOutFeatureShowcase />
-                    )}
-
-                    {/* Show personalized content only if the check is COMPLETE and the user IS logged in */}
-                    {isLoggedIn ? (
-                        <div className="smooth-fade">
-                             <hr className="my-16 h-px border-0 bg-gradient-to-r from-transparent via-border to-transparent" /> 
-                            
-                            {/* Pass combined loading flag to sections */}
-                            <WatchlistSection
-                                watchlist={watchlist}
-                                onRemove={handleRemoveFromWatchlist}
-                                onShowDetails={handleShowWatchlistDetails}
-                                onMarkWatched={handleMarkWatched}
-                                isLoading={isSectionLoading}
-                            />
-                            <MovieSection
-                                filteredMovies={filteredMovies}
-                                movieGenres={movieGenres}
-                                movieGenreFilter={movieGenreFilter}
-                                movieSort={movieSort}
-                                onSetMovieGenreFilter={setMovieGenreFilter}
-                                onSetMovieSort={setMovieSort}
-                                onRemove={handleRemoveMovie}
-                                onShowDetails={handleShowMovieDetails}
-                                onEdit={handleEditMovie}
-                                currentPage={moviesPage}
-                                totalItems={totalFilteredMovies}
-                                itemsPerPage={itemsPerPage}
-                                onSetPage={setMoviesPage}
-                                onAddMovie={handleAddMovie}
-                                isLoading={isSectionLoading}
-                            />
-                            <TVShowSection
-                                filteredTVShows={filteredTVShows}
-                                tvGenres={tvGenres}
-                                tvGenreFilter={tvGenreFilter}
-                                tvShowSort={tvShowSort}
-                                onSetTvGenreFilter={setTvGenreFilter}
-                                onSetTvShowSort={setTvShowSort}
-                                onRemove={handleRemoveTVShow}
-                                onShowDetails={handleShowTVDetails}
-                                onEdit={handleEditTVShow}
-                                currentPage={tvShowsPage}
-                                totalItems={totalFilteredTVShows}
-                                itemsPerPage={itemsPerPage}
-                                onSetPage={setTvShowsPage}
-                               
-                                onAddTVShow={(id, title, poster_path) => handleAddTVShow(id, title, poster_path)}
-                                isLoading={isSectionLoading}
-                            />
-                        </div>
-                    ) : null}
-                </div>
-                <DetailsDialog
-                    open={detailsOpen}
-                    onOpenChange={setDetailsOpen}
-                    content={selectedContent}
-                />
-                <EditMovieDialog
-                    open={editMovieOpen}
-                    onOpenChange={setEditMovieOpen}
-                    movie={movieToEdit}
-                    onEditMovie={handleUpdateMovie}
-                />
-                <EditTVShowDialog
-                    open={editTVShowOpen}
-                    onOpenChange={setEditTVShowOpen}
-                    show={tvShowToEdit}
-                    onEditTVShow={handleUpdateTVShow}
-                />
-            </main>
-        </>
-    );
 };
-
-export default HomePage;

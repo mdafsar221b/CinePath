@@ -14,26 +14,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { NewMovie } from "@/lib/types";
+import { NewMovie, SearchResult } from "@/lib/types";
 import { Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import { mapDetailedContent, mapSearchResult } from "@/lib/tmdb-mapper";
 
 interface AddMovieDialogProps {
   onAddMovie: (movie: NewMovie) => void;
 }
 
-interface SearchResult {
-  id: string; 
-  title: string;
-  year: string; 
-  poster_path: string | null; 
-}
+interface MovieSearchResult extends SearchResult {}
 
 export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<MovieSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [isManualEntry, setIsManualEntry] = useState(false);
   const [manualTitle, setManualTitle] = useState("");
@@ -47,12 +43,17 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
     setLoading(true);
     setResults([]);
     try {
-      const res = await fetch(`/api/search/movies?query=${encodeURIComponent(searchTerm)}`);
+      const res = await fetch(`/api/tmdb-proxy?path=/search/movie&query=${encodeURIComponent(searchTerm)}`);
       if (!res.ok) {
         throw new Error("Failed to fetch search results");
       }
       const data = await res.json();
-      setResults(data);
+      
+      const mappedResults = data.results
+        .map((item: any) => mapSearchResult({...item, media_type: 'movie'}))
+        .filter((result: SearchResult | null) => result !== null && result.type === 'movie') as MovieSearchResult[];
+        
+      setResults(mappedResults);
     } catch (e) {
       console.error("Search error:", e);
       setResults([]);
@@ -62,23 +63,22 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
     }
   };
 
-  const handleAddFromSearch = async (movie: SearchResult) => {
+  const handleAddFromSearch = async (movie: MovieSearchResult) => {
     try {
-      const detailsRes = await fetch(`/api/details?id=${movie.id}&type=movie`);
-      if (!detailsRes.ok) throw new Error("Failed to fetch movie details");
-      
-      const details = await detailsRes.json();
+      const tmdbDetails = await mapDetailedContent(movie.tmdbId, 'movie');
       
       const movieToAdd: NewMovie = {
-        title: details.title,
-        year: parseInt(details.year) || 0,
-        poster_path: details.poster_path,
-        genre: details.genre,
-        plot: details.plot,
-        rating: details.rating,
-        actors: details.actors,
-        director: details.director,
-        imdbRating: details.imdbRating,
+        tmdbId: movie.tmdbId,
+        imdbId: tmdbDetails.imdbId,
+        title: tmdbDetails.title!, // Use non-null assertion
+        year: tmdbDetails.year!, // Use non-null assertion
+        poster_path: tmdbDetails.poster_path,
+        genre: tmdbDetails.genre,
+        plot: tmdbDetails.plot,
+        rating: tmdbDetails.rating,
+        actors: tmdbDetails.actors,
+        director: tmdbDetails.director,
+        imdbRating: tmdbDetails.imdbRating,
       };
       
       onAddMovie(movieToAdd);
@@ -88,6 +88,7 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
     } catch (error) {
       console.error("Error adding movie:", error);
       const movieToAdd: NewMovie = {
+        tmdbId: movie.tmdbId,
         title: movie.title,
         year: parseInt(movie.year) || 0,
         poster_path: movie.poster_path,
@@ -103,6 +104,7 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
     e.preventDefault();
     if (manualTitle && manualYear) {
       const movieToAdd: NewMovie = {
+        tmdbId: 0, // Fallback for manual entry
         title: manualTitle,
         year: manualYear,
         poster_path: manualPoster || null,
@@ -171,7 +173,7 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
                 <div className="space-y-3">
                   {results.map((movie) => (
                     <div
-                      key={movie.id}
+                      key={movie.tmdbId}
                       className="glass-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
                     >
                       {movie.poster_path ? (

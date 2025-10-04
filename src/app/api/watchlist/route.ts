@@ -25,19 +25,23 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { id, title, year, poster_path, type, genre, plot, rating, actors, director, imdbRating } = body;
+        const { tmdbId, imdbId, title, year, poster_path, type, genre, plot, rating, actors, director, imdbRating } = body;
 
-        // Check if item already exists in watchlist for this user
-        const existingItem = await db.collection("watchlist").findOne({ id: id, userId });
+        if (!tmdbId) {
+            return NextResponse.json({ error: "Watchlist item requires a unique TMDB ID." }, { status: 400 });
+        }
+
+        // Check if item already exists in watchlist for this user (using tmdbId)
+        const existingItem = await db.collection("watchlist").findOne({ tmdbId: tmdbId, userId });
         if (existingItem) {
             return NextResponse.json({ error: "Item already in watchlist" }, { status: 409 });
         }
 
-        // Check if item is already watched by this user
+        // Check if item is already watched by this user (using tmdbId)
         const collectionName = type === 'movie' ? 'movies' : 'tv_shows';
         const watchedItem = await db.collection(collectionName).findOne({ 
-            title: { $regex: new RegExp(`^${title}$`, 'i') },
-            userId // FILTER BY userId
+            tmdbId: tmdbId,
+            userId 
         });
         
         if (watchedItem) {
@@ -45,7 +49,8 @@ export async function POST(request: NextRequest) {
         }
 
         const result = await db.collection("watchlist").insertOne({
-            id,
+            tmdbId,
+            imdbId,
             title,
             year,
             poster_path,
@@ -57,7 +62,7 @@ export async function POST(request: NextRequest) {
             director,
             imdbRating,
             addedAt: new Date(),
-            userId, // ADDED userId
+            userId, 
         });
 
         return NextResponse.json(result, { status: 201 });
@@ -82,7 +87,6 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
 
-        // Delete only if the document belongs to the user
         const result = await db.collection("watchlist").deleteOne({ _id: new ObjectId(id), userId });
         return NextResponse.json(result);
     } catch (e) {

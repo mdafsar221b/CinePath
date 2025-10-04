@@ -1,7 +1,8 @@
-
-
+// src/lib/types.ts
 export type NewMovie = {
   title: string;
+  tmdbId: number; 
+  imdbId?: string;
   year: number;
   poster_path?: string | null;
   genre?: string;
@@ -12,19 +13,14 @@ export type NewMovie = {
   imdbRating?: string;
 };
 
-// Deprecated: No longer used for tracking watched progress, only for movie-style adds.
-export type NewTVShow = {
-  title: string;
-  poster_path?: string | null;
-};
-
-
+// --- Updated SearchResult ---
 export type SearchResult = {
-  id: string;
+  tmdbId: number; 
   title: string;
   year: string;
   poster_path: string | null;
   type: 'movie' | 'tv';
+  // ADDED DETAIL FIELDS FOR ENRICHMENT STATUS CHECKING
   genre?: string;
   plot?: string;
   rating?: string;
@@ -35,7 +31,8 @@ export type SearchResult = {
 
 export type Movie = {
   _id: string;
-  id?: string;
+  tmdbId: number; 
+  imdbId?: string; 
   title: string;
   year: number;
   addedAt: number;
@@ -51,35 +48,15 @@ export type Movie = {
   userId: string; 
 };
 
-
-// --- NEW TV SHOW TYPES ---
-
-export type WatchedEpisode = {
-  id: string; // IMDb ID (ttXXXXXXX)
-  title: string;
-  episode: string;
-  rating: string;
-  released: string;
-};
-
-export type OMDBSingleSeason = {
-  Season: string;
-  Episodes: WatchedEpisode[];
-};
-
-export type OMDBSummary = {
-  totalSeasons: string;
-  imdbID: string;
-};
-
 export type TVShow = {
   _id: string;
-  id: string; // IMDb ID (CRITICAL: now required and stored)
+  tmdbId: number; 
+  imdbId?: string; 
   title: string;
-  watchedEpisodeIds: string[]; // List of IMDb IDs of watched episodes
-  favoriteEpisodeIds: string[]; // NEW: List of IMDb IDs of favorite episodes
-  totalEpisodes?: number; // NEW: Total number of episodes (for card display)
-  trackedSeasonCount?: number; // FIX: Number of unique seasons with at least one watched episode
+  watchedEpisodeIds: string[]; 
+  favoriteEpisodeIds: string[]; 
+  totalEpisodes?: number; 
+  trackedSeasonCount?: number; 
   addedAt: number;
   poster_path?: string | null;
   genre?: string;
@@ -95,7 +72,8 @@ export type TVShow = {
 };
 
 export type DetailedContent = {
-  id: string;
+  tmdbId: number;
+  imdbId?: string;
   title: string;
   year: number;
   poster_path: string | null;
@@ -108,14 +86,16 @@ export type DetailedContent = {
   type: 'movie' | 'tv';
 };
 
-
+// --- Updated WatchlistItem ---
 export type WatchlistItem = {
   _id: string;
-  id: string;
+  tmdbId: number;
+  imdbId?: string;
   title: string;
   year?: string;
   poster_path?: string | null;
   type: 'movie' | 'tv';
+  // ADDED DETAIL FIELDS FOR ENRICHMENT STATUS CHECKING
   genre?: string;
   plot?: string;
   rating?: string;
@@ -125,6 +105,7 @@ export type WatchlistItem = {
   addedAt: Date;
   userId: string; 
 };
+
 export type SortOption =
   | "addedAt_desc"
   | "addedAt_asc"

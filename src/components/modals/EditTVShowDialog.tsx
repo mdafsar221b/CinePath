@@ -1,3 +1,4 @@
+// src/components/modals/EditTVShowDialog.tsx
 
 
 "use client";
@@ -20,9 +21,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ChevronDown, ChevronUp, Heart } from "lucide-react"; 
 import { cn } from "@/lib/utils"; 
 import toast from "react-hot-toast";
+import { fetchTMDBSeriesStructure } from "@/lib/tmdb-mapper";
 
-// NOTE: Since Collapsible is not provided as a separate UI component,
-// this custom wrapper is used to provide the required functionality.
 const CollapsibleWrapper = ({ title, children, defaultOpen = false, totalEpisodes, watchedEpisodes }: { title: string, children: React.ReactNode, defaultOpen?: boolean, totalEpisodes: number, watchedEpisodes: number }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const progress = totalEpisodes > 0 ? `${watchedEpisodes}/${totalEpisodes} Episodes` : 'Loading...';
@@ -51,7 +51,7 @@ const CollapsibleWrapper = ({ title, children, defaultOpen = false, totalEpisode
 interface SeasonDetail {
     seasonNumber: number;
     episodes: {
-        id: string; // IMDb ID of the episode
+        id: string; 
         title: string;
         episodeNumber: number;
         rating: string;
@@ -73,12 +73,11 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]); 
   
-  const [isSaving, setIsSaving] = useState(false); // Unified saving state
+  const [isSaving, setIsSaving] = useState(false);
   
   const [seriesStructure, setSeriesStructure] = useState<{ totalSeasons: number; seasons: SeasonDetail[] } | null>(null);
   const [loadingStructure, setLoadingStructure] = useState(false);
 
-  // Sync local state with prop state when dialog opens or show changes
   useEffect(() => {
     if (show) {
       setMyRating(show.myRating || null);
@@ -87,15 +86,11 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
       setWatchedIds(show.watchedEpisodeIds || []);
       setFavoriteIds(show.favoriteEpisodeIds || []); 
       
-      // Fetch full series structure when the dialog opens
-      const fetchSeriesStructure = async () => {
-        if (!show.id) return; 
+      const fetchStructure = async () => {
+        if (!show.tmdbId) return; 
         setLoadingStructure(true);
         try {
-            // Updated API route to get series structure
-            const res = await fetch(`/api/details/series/${show.id}`);
-            if (!res.ok) throw new Error("Failed to fetch series structure");
-            const data = await res.json();
+            const data = await fetchTMDBSeriesStructure(show.tmdbId);
             setSeriesStructure(data);
         } catch (error) {
             console.error("Error fetching series structure:", error);
@@ -105,7 +100,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
             setLoadingStructure(false);
         }
       };
-      fetchSeriesStructure();
+      fetchStructure();
     }
   }, [show]); 
   
@@ -117,24 +112,20 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const totalEpisodes = allEpisodeIds.length;
   const totalWatched = watchedIds.length;
   
-  // HANDLER: COMBINES ALL SAVING INTO ONE FUNCTION
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!show) return;
 
     setIsSaving(true);
     
-    // 1. Calculate Episode/Season Counts
-    const totalEpisodesPayload = seriesStructure ? seriesStructure.seasons.flatMap(s => s.episodes).length : show.totalEpisodes;
+    const totalEpisodesPayload = totalEpisodes;
     
-    // 2. Count how many seasons have at least one watched episode
     const trackedSeasonCount = seriesStructure 
         ? seriesStructure.seasons.filter(season => 
             season.episodes.some(episode => watchedIds.includes(episode.id))
           ).length
         : 0;
 
-    // 3. Combine ALL fields into one payload
     const updatedShowPayload = {
       _id: show._id,
       myRating,
@@ -155,7 +146,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
 
       if (!res.ok) throw new Error("Failed to update TV show details.");
 
-      // 4. Update the parent state immediately
       const updatedShow = {
         ...show,
         ...updatedShowPayload, 
@@ -163,7 +153,7 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
       onEditTVShow(updatedShow);
       
       toast.success("All changes saved!");
-      onOpenChange(false); // Close dialog on success
+      onOpenChange(false);
       
     } catch (error) {
       console.error("Error saving TV show changes:", error);
@@ -177,16 +167,13 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
   const handleEpisodeCheck = (episodeId: string, checked: boolean) => {
     setWatchedIds(prev => {
         if (checked) {
-            // Add if not present
             return Array.from(new Set([...prev, episodeId]));
         } else {
-            // Remove if present
             return prev.filter(id => id !== episodeId);
         }
     });
   };
   
-  // Handler for marking an episode as favorite
   const handleFavoriteCheck = (episodeId: string, checked: boolean) => {
     setFavoriteIds(prev => {
         if (checked) {
@@ -237,7 +224,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         </DialogHeader>
 
        
-        {/* Personal Details Section */}
         <div className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="myRating" className="text-sm font-medium">My Rating (1-10)</Label>
@@ -277,7 +263,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
         </div>
 
        
-        {/* Episode Tracking Section */}
         <div className="mt-4 border-t border-border/50 pt-4">
             <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">Episode Tracking</h4>
             
@@ -351,7 +336,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
                                             E{episode.episodeNumber}: {episode.title}
                                         </Label>
                                         
-                                        {/* Favorite Toggle */}
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -382,7 +366,6 @@ export const EditTVShowDialog = ({ open, onOpenChange, show, onEditTVShow }: Edi
             )}
         </div>
         
-        {/* Unified Save Button in a sticky-like dialog footer style */}
         <div className="sticky bottom-0 bg-background/90 backdrop-blur-sm p-4 -mx-6 -mb-6 border-t border-border/50 rounded-b-2xl">
             <Button 
                 onClick={handleSaveChanges} 

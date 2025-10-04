@@ -5,17 +5,14 @@ import { useState, useEffect } from "react";
 import { WatchlistItem, SearchResult, NewMovie } from "@/lib/types";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { mapDetailedContent } from "@/lib/tmdb-mapper";
 
-// Interface for helpers needed from the master hook's environment
 interface WatchlistDependencies {
     isLoggedIn: boolean;
     fetchMovies: () => Promise<void>;
     fetchTVShows: () => Promise<void>;
 }
 
-/**
- * Custom hook for fetching, managing, and performing CRUD on the Watchlist.
- */
 export const useWatchlistData = ({ isLoggedIn, fetchMovies, fetchTVShows }: WatchlistDependencies) => {
     const { status } = useSession();
     const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
@@ -44,25 +41,22 @@ export const useWatchlistData = ({ isLoggedIn, fetchMovies, fetchTVShows }: Watc
         }
     }, [isLoggedIn, status]);
 
-    // Helper to fetch/enrich content details from OMDb API (moved from master hook)
     const fetchAndEnrichContentDetails = async (item: WatchlistItem | SearchResult) => {
-        if (item.genre && item.plot && item.imdbRating) {
+        // This check is now explicitly type-safe due to the fix in types.ts
+        if (item.genre && item.plot && item.imdbRating) { 
             return item;
         }
         
-        const type = item.type === 'movie' ? 'movie' : 'series';
-
         try {
-            const detailsRes = await fetch(`/api/details?id=${item.id}&type=${type}`);
-            if (detailsRes.ok) {
-                const details = await detailsRes.json();
-                return {
-                    ...item,
-                    ...details,
-                    id: item.id, 
-                    title: item.title,
-                };
-            }
+            const { mapDetailedContent } = await import('@/lib/tmdb-mapper');
+            const details = await mapDetailedContent(item.tmdbId, item.type);
+
+            return {
+                ...item,
+                ...details,
+                tmdbId: item.tmdbId, 
+                title: item.title,
+            };
         } catch (error) {
             console.error(`Failed to fetch details for ${item.title}:`, error);
         }
@@ -114,24 +108,26 @@ export const useWatchlistData = ({ isLoggedIn, fetchMovies, fetchTVShows }: Watc
         }
     };
     
-    // Handler for marking item watched and moving it from watchlist to main list
     const handleMarkWatched = async (item: WatchlistItem) => {
         if (!isLoggedIn) return; 
 
         const enrichedItem = await fetchAndEnrichContentDetails(item);
+        const eItem = enrichedItem as any; 
 
         try {
-            if (enrichedItem.type === 'movie') {
+            if (eItem.type === 'movie') {
                 const movieData: NewMovie = {
-                    title: enrichedItem.title,
-                    year: parseInt(enrichedItem.year || "0"),
-                    poster_path: enrichedItem.poster_path,
-                    genre: enrichedItem.genre,
-                    plot: enrichedItem.plot,
-                    rating: enrichedItem.rating,
-                    actors: enrichedItem.actors,
-                    director: (enrichedItem as any).director,
-                    imdbRating: enrichedItem.imdbRating,
+                    tmdbId: eItem.tmdbId,
+                    imdbId: eItem.imdbId,
+                    title: eItem.title,
+                    year: parseInt(eItem.year || "0"),
+                    poster_path: eItem.poster_path,
+                    genre: eItem.genre,
+                    plot: eItem.plot,
+                    rating: eItem.rating,
+                    actors: eItem.actors,
+                    director: eItem.director,
+                    imdbRating: eItem.imdbRating,
                 };
                 await fetch("/api/movies", {
                     method: "POST",
@@ -142,14 +138,15 @@ export const useWatchlistData = ({ isLoggedIn, fetchMovies, fetchTVShows }: Watc
                 fetchMovies();
             } else {
                 const tvShowData = {
-                    id: enrichedItem.id,
-                    title: enrichedItem.title,
-                    poster_path: enrichedItem.poster_path,
-                    genre: enrichedItem.genre,
-                    plot: enrichedItem.plot,
-                    rating: enrichedItem.rating,
-                    actors: enrichedItem.actors,
-                    imdbRating: enrichedItem.imdbRating,
+                    tmdbId: eItem.tmdbId,
+                    imdbId: eItem.imdbId,
+                    title: eItem.title,
+                    poster_path: eItem.poster_path,
+                    genre: eItem.genre,
+                    plot: eItem.plot,
+                    rating: eItem.rating,
+                    actors: eItem.actors,
+                    imdbRating: eItem.imdbRating,
                     watchedEpisodeIds: [] as string[], 
                     favoriteEpisodeIds: [] as string[],
                 };
@@ -161,8 +158,7 @@ export const useWatchlistData = ({ isLoggedIn, fetchMovies, fetchTVShows }: Watc
                 toast.success(`'${item.title}' marked as watched and added to TV Shows!`);
                 fetchTVShows();
             }
-            await fetch(`/api/watchlist?id=${item._id}`, { method: "DELETE" });
-            fetchWatchlist();
+            await handleRemoveFromWatchlist(item._id);
         } catch (error) {
             console.error("Error marking watched:", error);
             toast.error(`Failed to mark '${item.title}' as watched. It may already be in your watched lists.`);

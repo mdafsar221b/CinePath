@@ -1,3 +1,4 @@
+// src/app/api/tv-shows/route.ts
 
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
@@ -27,7 +28,8 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         
         const { 
-            id, 
+            tmdbId, 
+            imdbId,
             title, 
             poster_path, 
             watchedEpisodeIds = [], 
@@ -44,11 +46,11 @@ export async function POST(request: NextRequest) {
             isFavorite 
         } = body;
 
-        if (!id) {
-            return NextResponse.json({ error: "TV Show requires a unique ID." }, { status: 400 });
+        if (!tmdbId) {
+            return NextResponse.json({ error: "TV Show requires a unique TMDB ID." }, { status: 400 });
         }
 
-        const findQuery = { id, userId };
+        const findQuery = { tmdbId, userId };
         const existingShow = await db.collection("tv_shows").findOne(findQuery);
 
         const updateFields = {
@@ -67,7 +69,6 @@ export async function POST(request: NextRequest) {
         };
 
         if (existingShow) {
-          
             const existingWatchedIds = existingShow.watchedEpisodeIds || [];
             const mergedWatchedIds = Array.from(new Set([...existingWatchedIds, ...watchedEpisodeIds]));
             
@@ -89,7 +90,8 @@ export async function POST(request: NextRequest) {
             // Create new TV show
             const result = await db.collection("tv_shows").insertOne({ 
                 ...updateFields,
-                id,
+                tmdbId,
+                imdbId,
                 watchedEpisodeIds,
                 favoriteEpisodeIds, 
                 addedAt: new Date(),

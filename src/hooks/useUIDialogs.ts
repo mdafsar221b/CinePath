@@ -3,23 +3,18 @@
 
 import { useState } from "react";
 import { Movie, TVShow, DetailedContent, WatchlistItem, SearchResult } from "@/lib/types";
+import { mapDetailedContent, fetchTMDBSeriesStructure } from "@/lib/tmdb-mapper"; 
 
-// Interface for dependencies needed from the master hook
 interface UIDialogDependencies {
     fetchAndEnrichContentDetails: (item: WatchlistItem | SearchResult) => Promise<any>;
 }
 
-/**
- * Custom hook to manage all UI state related to Dialogs (open/close flags)
- * and the content currently selected for viewing or editing.
- */
 export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependencies) => {
     
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [editMovieOpen, setEditMovieOpen] = useState(false);
     const [editTVShowOpen, setEditTVShowOpen] = useState(false);
     
-    // The unified content object passed to DetailsDialog
     const [selectedContent, setSelectedContent] = useState<(DetailedContent & Partial<Movie> & Partial<TVShow> & {
         seriesStructure?: any; 
         favoriteEpisodeIds?: string[];
@@ -30,7 +25,8 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
 
     const handleShowMovieDetails = async (movie: Movie) => {
         const detailedContent = {
-            id: movie.id || movie._id,
+            tmdbId: movie.tmdbId,
+            imdbId: movie.imdbId,
             title: movie.title,
             year: movie.year,
             poster_path: movie.poster_path || null,
@@ -52,22 +48,15 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
         let enrichedShow = show;
         const isDetailsMissing = !show.genre || show.genre === 'N/A' || !show.actors || show.actors === 'N/A' || !show.imdbRating || show.imdbRating === 'N/A';
          
-        // 1. Enrich base OMDb fields if missing (Genre, Actors, IMDb Rating)
-        if (isDetailsMissing && show.id) {
+        // 1. Enrich base details if missing
+        if (isDetailsMissing && show.tmdbId) {
              try {
-                const detailsRes = await fetch(`/api/details?id=${show.id}&type=series`);
-                if (detailsRes.ok) {
-                    const details = await detailsRes.json();
-                    enrichedShow = {
-                        ...show,
-                        ...details,
-                        myRating: show.myRating,
-                        personalNotes: show.personalNotes,
-                        isFavorite: show.isFavorite,
-                        favoriteEpisodeIds: show.favoriteEpisodeIds,
-                        id: show.id, 
-                    };
-                }
+                const details = await mapDetailedContent(show.tmdbId, 'tv');
+                enrichedShow = {
+                    ...show,
+                    ...details,
+                    tmdbId: show.tmdbId, 
+                } as TVShow;
              } catch (error) {
                  console.error("Error fetching missing TV show details:", error);
              }
@@ -75,12 +64,9 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
         
         // 2. Fetch the full series structure for episode display
         let seriesStructure = null;
-        if (enrichedShow.id) {
+        if (enrichedShow.tmdbId) {
             try {
-                const res = await fetch(`/api/details/series/${enrichedShow.id}`);
-                if (res.ok) {
-                    seriesStructure = await res.json();
-                }
+                seriesStructure = await fetchTMDBSeriesStructure(enrichedShow.tmdbId);
             } catch (error) {
                 console.error("Error fetching series structure for details:", error);
             }
@@ -89,7 +75,8 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
         const releaseYear = (enrichedShow as any).year && (enrichedShow as any).year > 0 ? (enrichedShow as any).year : new Date(enrichedShow.addedAt).getFullYear();
         
         const detailedContent = {
-            id: enrichedShow.id || enrichedShow._id,
+            tmdbId: enrichedShow.tmdbId, 
+            imdbId: (enrichedShow as any).imdbId, 
             title: enrichedShow.title,
             year: releaseYear, 
             poster_path: enrichedShow.poster_path || null,
@@ -114,7 +101,8 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
         const enrichedItem = await fetchAndEnrichContentDetails(item);
 
         const detailedContent: DetailedContent = {
-            id: enrichedItem.id,
+            tmdbId: enrichedItem.tmdbId,
+            imdbId: enrichedItem.imdbId,
             title: enrichedItem.title,
             year: parseInt(enrichedItem.year || "0") || 0,
             poster_path: enrichedItem.poster_path || null,
@@ -134,7 +122,8 @@ export const useUIDialogs = ({ fetchAndEnrichContentDetails }: UIDialogDependenc
         const enrichedResult = await fetchAndEnrichContentDetails(result);
 
         const contentForDetails: (DetailedContent & Partial<Movie> & Partial<TVShow>) = {
-            id: enrichedResult.id,
+            tmdbId: enrichedResult.tmdbId,
+            imdbId: enrichedResult.imdbId,
             title: enrichedResult.title,
             year: parseInt(enrichedResult.year || "0") || 0,
             poster_path: enrichedResult.poster_path || null,

@@ -1,3 +1,4 @@
+// src/components/sections/HeroSection.tsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -13,16 +14,14 @@ import { useSession } from "next-auth/react";
 
 interface HeroSectionProps {
   searchTerm: string;
-  // FIX: Renamed 'onSearchChange' to 'setSearchTerm' to match usage
   setSearchTerm: (value: string) => void;
   setSearchResults: (value: SearchResult[]) => void; 
   searchResults: SearchResult[];
   loading: boolean;
-  addingToWatchlist: string | null;
+  addingToWatchlist: number | null;
   onSearchSubmit: (e: React.FormEvent) => void;
   onAddMovie: (movie: any) => void;
-  // Updated prop signature to match useCinePath.ts
-  onAddTVShow: (id: string, title: string, poster_path: string | null) => void;
+  onAddTVShow: (tmdbId: number, title: string, poster_path: string | null) => void;
   onSelectContent: (result: SearchResult) => void;
   onAddToWatchlist: (item: SearchResult) => Promise<void>;
   isLoggedIn: boolean; 
@@ -30,7 +29,7 @@ interface HeroSectionProps {
 
 export const HeroSection = ({
   searchTerm,
-  setSearchTerm, // Now correctly defined in props interface
+  setSearchTerm,
   setSearchResults, 
   searchResults,
   loading,
@@ -54,6 +53,10 @@ export const HeroSection = ({
     setSearchResults([]); 
   }; 
 
+  const handleSearch = (e: React.FormEvent) => {
+    onSearchSubmit(e);
+  };
+  
   const handleAddToWatchlistAndFeedback = async (result: SearchResult) => {
     try {
       await onAddToWatchlist(result);
@@ -68,7 +71,6 @@ export const HeroSection = ({
   };
   
   const loggedOutContent = (
-      // MODIFIED: Replaced min-h-[] with responsive padding for better content flow
       <div className="flex flex-col items-center justify-center pt-24 pb-32 p-4 md:p-8">
           <motion.section 
               className="text-center w-full max-w-2xl mx-auto"
@@ -113,7 +115,7 @@ export const HeroSection = ({
         >
           <SearchInput
               searchTerm={searchTerm}
-              onSearchChange={setSearchTerm} // Correct usage: passing the setter function
+              onSearchChange={setSearchTerm} 
               onSearchSubmit={onSearchSubmit}
               onClear={handleClearResults}
               loading={loading}
@@ -124,7 +126,7 @@ export const HeroSection = ({
               <div className="space-y-4">
                 {searchResults.map((result) => (
                   <div
-                    key={result.id}
+                    key={result.tmdbId}
                     className="bg-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex flex-col gap-4"
                   >
                     <div className="flex gap-4 items-start">
@@ -164,7 +166,6 @@ export const HeroSection = ({
                             </Badge>
                           )}
                         </div>
-                        {result.plot && <p className="text-sm text-muted-foreground line-clamp-2 mt-2 hidden sm:block">{result.plot}</p>}
                       </div>
                     </div>
                     
@@ -182,10 +183,10 @@ export const HeroSection = ({
                         onClick={() => handleAddToWatchlistAndFeedback(result)}
                         size="sm"
                         className="transition-colors duration-300 rounded-lg flex-1"
-                        disabled={addingToWatchlist === result.id}
+                        disabled={addingToWatchlist === result.tmdbId}
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        {addingToWatchlist === result.id ? "Adding..." : "Watchlist"}
+                        {addingToWatchlist === result.tmdbId ? "Adding..." : "Watchlist"}
                       </Button>
                     </div>
                   </div>
@@ -208,6 +209,5 @@ export const HeroSection = ({
     </div>
   );
   
-  // Conditionally render the appropriate content
   return isLoggedIn ? loggedInContent : loggedOutContent;
 };

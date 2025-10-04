@@ -4,7 +4,6 @@
 import { Movie, TVShow, NewMovie } from "@/lib/types";
 import toast from "react-hot-toast";
 
-// Interface for dependencies needed from the master hook
 interface ContentCRUDFunctions {
     isLoggedIn: boolean;
     fetchMovies: () => Promise<void>;
@@ -16,10 +15,6 @@ interface ContentCRUDFunctions {
     setEditTVShowOpen: (open: boolean) => void;
 }
 
-/**
- * Custom hook encapsulating all Create, Read, Update, Delete (CRUD) operations
- * for Movies and TV Shows.
- */
 export const useContentCRUD = ({ 
     isLoggedIn, 
     fetchMovies, 
@@ -31,8 +26,6 @@ export const useContentCRUD = ({
     setEditTVShowOpen
 }: ContentCRUDFunctions) => {
 
-    // --- MOVIE HANDLERS ---
-    
     const handleAddMovie = async (newMovie: NewMovie) => {
         if (!isLoggedIn) return; 
         try {
@@ -70,17 +63,13 @@ export const useContentCRUD = ({
     const handleUpdateMovie = async (updatedMovie?: Movie) => {
         if (!isLoggedIn) return; 
         fetchMovies();
-        if (updatedMovie) {
-             toast.success(`'${updatedMovie.title}' details updated.`);
-        }
     };
-
-    // --- TV SHOW HANDLERS ---
     
-    const handleAddTVShow = async (id: string, title: string, poster_path: string | null) => {
+    // UPDATED: Use tmdbId: number
+    const handleAddTVShow = async (tmdbId: number, title: string, poster_path: string | null) => {
         if (!isLoggedIn) return; 
         const tvShowData = {
-            id,
+            tmdbId,
             title,
             poster_path,
             watchedEpisodeIds: [] as string[],
@@ -120,7 +109,6 @@ export const useContentCRUD = ({
 
     const handleUpdateTVShow = async (updatedShow?: TVShow) => {
         if (!isLoggedIn) return; 
-        // Optimistic update for immediate visual feedback
         if (updatedShow) {
              setTVShows(prev => prev.map(s => s._id === updatedShow._id ? updatedShow : s));
              setTvShowToEdit(updatedShow);

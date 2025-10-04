@@ -9,7 +9,6 @@ export async function GET() {
         const userId = await getUserIdFromSession(); 
         const client = await clientPromise;
         const db = client.db("cinepath"); 
-        // FILTER BY userId
         const movies = await db.collection("movies").find({ userId }).sort({ addedAt: -1 }).toArray(); 
         return NextResponse.json(movies);
     } catch (e) {
@@ -26,8 +25,15 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db("cinepath");
         const body = await request.json();
-        const { title, year, poster_path, genre, plot, rating, actors, director, imdbRating, myRating, personalNotes } = body;
+        const { tmdbId, imdbId, title, year, poster_path, genre, plot, rating, actors, director, imdbRating, myRating, personalNotes } = body;
+        
+        if (!tmdbId) {
+            return NextResponse.json({ error: "Movie requires a unique TMDB ID." }, { status: 400 });
+        }
+
         const result = await db.collection("movies").insertOne({ 
+            tmdbId,
+            imdbId,
             title, 
             year, 
             poster_path, 
@@ -40,7 +46,7 @@ export async function POST(request: NextRequest) {
             myRating,
             personalNotes,
             addedAt: new Date(),
-            userId, // ADDED userId
+            userId, 
         });
         return NextResponse.json(result, { status: 201 });
     } catch (e) {
@@ -64,7 +70,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const result = await db.collection("movies").updateOne(
-            { _id: new ObjectId(_id), userId }, // FILTER BY userId
+            { _id: new ObjectId(_id), userId }, 
             { 
                 $set: {
                     myRating,
@@ -92,7 +98,7 @@ export async function DELETE(request: NextRequest) {
         if (!id) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
-        const result = await db.collection("movies").deleteOne({ _id: new ObjectId(id), userId }); // FILTER BY userId
+        const result = await db.collection("movies").deleteOne({ _id: new ObjectId(id), userId }); 
         return NextResponse.json(result);
     } catch (e) {
         if (e instanceof Error && e.message === "User not authenticated.") {

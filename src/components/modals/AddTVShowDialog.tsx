@@ -16,23 +16,22 @@ import { useState } from "react";
 import { Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import { mapSearchResult } from "@/lib/tmdb-mapper";
+import { SearchResult } from "@/lib/types";
+
 
 interface AddTVShowDialogProps {
-  onAddTVShow: (id: string, title: string, poster_path: string | null) => Promise<void>;
+  onAddTVShow: (tmdbId: number, title: string, poster_path: string | null) => Promise<void>;
 }
 
-interface SearchResult {
-  id: string;
-  title: string; 
-  poster_path: string | null;
-}
+interface TVShowSearchResult extends SearchResult {}
 
 export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<TVShowSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [addingId, setAddingId] = useState<string | null>(null);
+  const [addingId, setAddingId] = useState<number | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,12 +40,17 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     setLoading(true);
     setResults([]);
     try {
-      const res = await fetch(`/api/search/tv-shows?query=${encodeURIComponent(searchTerm)}`);
+      const res = await fetch(`/api/tmdb-proxy?path=/search/tv&query=${encodeURIComponent(searchTerm)}`);
       if (!res.ok) {
         throw new Error("Failed to fetch search results");
       }
       const data = await res.json();
-      setResults(data);
+      
+      const mappedResults = data.results
+        .map((item: any) => mapSearchResult({...item, media_type: 'tv'}))
+        .filter((result: SearchResult | null) => result !== null && result.type === 'tv') as TVShowSearchResult[];
+      
+      setResults(mappedResults);
     } catch (e) {
       console.error("Search error:", e);
       setResults([]);
@@ -56,11 +60,11 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
     }
   };
 
-  const handleAdd = async (show: SearchResult) => {
-    setAddingId(show.id);
+  const handleAdd = async (show: TVShowSearchResult) => {
+    setAddingId(show.tmdbId);
     try {
     
-      await onAddTVShow(show.id, show.title, show.poster_path);
+      await onAddTVShow(show.tmdbId, show.title, show.poster_path);
       
       toast.success(`${show.title} added! You can now edit it to track episodes.`);
 
@@ -123,7 +127,7 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
               <div className="space-y-3">
                 {results.map((show) => (
                   <div
-                    key={show.id}
+                    key={show.tmdbId}
                     className="glass-card rounded-xl p-4 hover:bg-muted/10 transition-colors duration-300 flex items-center gap-4"
                   >
                     {show.poster_path ? (
@@ -146,10 +150,10 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
                     </div>
                     <Button
                         onClick={() => handleAdd(show)}
-                        disabled={addingId === show.id}
+                        disabled={addingId === show.tmdbId}
                         className="rounded-lg"
                     >
-                        {addingId === show.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Add"}
+                        {addingId === show.tmdbId ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Add"}
                     </Button>
                   </div>
                 ))}
