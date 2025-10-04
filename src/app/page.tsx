@@ -1,6 +1,4 @@
 // src/app/page.tsx
-
-
 "use client";
 
 import { useCinePath } from "@/hooks/useCinePath";
@@ -17,7 +15,6 @@ import { LoggedOutFeatureShowcase } from "@/components/sections/LoggedOutFeature
 import { Button } from "@/components/ui/button"; 
 import Link from "next/link"; 
 import { Card } from "@/components/ui/card"; 
-import { TmdbDetailsDialog } from "@/components/modals/TmdbDetailsDialog"; // NEW IMPORT
 
 
 import { SearchResult } from "@/lib/types"; 
@@ -30,10 +27,6 @@ const HomePage = () => {
         watchlist, 
         
         detailsOpen,
-        setDetailsOpen,
-        tmdbDetailsOpen, // NEW
-        setTmdbDetailsOpen, // NEW
-        selectedTmdbContent, // NEW
         editMovieOpen,
         editTVShowOpen,
         selectedContent,
@@ -42,7 +35,7 @@ const HomePage = () => {
         
         moviesByYear,
         
-        // setDetailsOpen,
+        setDetailsOpen,
         setEditMovieOpen,
         setEditTVShowOpen,
         handleAddMovie,
@@ -125,7 +118,7 @@ const HomePage = () => {
 
                 <div className="container mx-auto px-4 md:px-8">
                     
-                    {isLoggedIn && !isSectionLoading && (
+                    {isLoggedIn && !isLoadingSession && (
                         <div className="text-center pt-10 pb-16">
                             <Card className="glass-card border-primary/20 bg-primary/5 p-6 md:p-10 max-w-2xl mx-auto">
                                 <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
@@ -144,7 +137,7 @@ const HomePage = () => {
                         </div>
                     )}
 
-                    {!isSectionLoading ? (
+                    {!isLoadingSession ? (
                         <TrendingSection 
                             onSelectContent={handleSelectContent}
                             onAddToWatchlist={handleAddToWatchlistAndFeedback}
@@ -163,17 +156,10 @@ const HomePage = () => {
 
                     
                 </div>
-                {/* OMDb Details Dialog (for watched/watchlist/search items) */}
                 <DetailsDialog
                     open={detailsOpen}
                     onOpenChange={setDetailsOpen}
                     content={selectedContent}
-                />
-                {/* TMDb Details Dialog (for trending/popular items) */}
-                <TmdbDetailsDialog
-                    open={tmdbDetailsOpen}
-                    onOpenChange={setTmdbDetailsOpen}
-                    content={selectedTmdbContent}
                 />
                 <EditMovieDialog
                     open={editMovieOpen}
