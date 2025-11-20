@@ -1,9 +1,9 @@
-// src/lib/api-utils.ts
+
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { TrendingContent } from "./types";
 
-const CACHE_TTL_HOURS = 168; 
+const CACHE_TTL_HOURS = 168;
 const CACHE_TTL_MS = CACHE_TTL_HOURS * 60 * 60 * 1000;
 
 export function handleServerError(message: string, error: unknown) {
@@ -17,12 +17,12 @@ export function handleClientError(message: string, status: number) {
 
 async function fetchAndCacheOmdbDetails(id: string, apiKey: string) {
     const client = await clientPromise;
-    const db = client.db("cinepath"); 
-    const cacheCollection = db.collection("omdb_cache"); 
-    
+    const db = client.db("cinepath");
+    const cacheCollection = db.collection("omdb_cache");
+
     const now = Date.now();
 
-    const cachedItem = await cacheCollection.findOne({ 
+    const cachedItem = await cacheCollection.findOne({
         imdbID: id,
         expiresAt: { $gt: new Date(now) }
     });
@@ -34,7 +34,7 @@ async function fetchAndCacheOmdbDetails(id: string, apiKey: string) {
 
     const url = `http://www.omdbapi.com/?apikey=${apiKey}&i=${id}&plot=full`;
     const apiResponse = await fetch(url);
-    
+
     if (!apiResponse.ok) {
         throw new Error(`API call failed with status: ${apiResponse.status}`);
     }
@@ -43,7 +43,7 @@ async function fetchAndCacheOmdbDetails(id: string, apiKey: string) {
     if (data.Response === "False") {
         throw new Error(data.Error);
     }
-    
+
     const expiresAt = new Date(now + CACHE_TTL_MS);
 
     const itemToCache = {
@@ -58,17 +58,17 @@ async function fetchAndCacheOmdbDetails(id: string, apiKey: string) {
         director: data.Director && data.Director !== "N/A" ? data.Director : null,
         imdbRating: data.imdbRating && data.imdbRating !== "N/A" ? data.imdbRating : null,
         type: data.Type === 'series' ? 'tv' : 'movie',
-        
+
         cachedAt: new Date(now),
-        expiresAt: expiresAt, 
+        expiresAt: expiresAt,
     };
-    
+
     await cacheCollection.replaceOne(
         { imdbID: id },
         itemToCache,
         { upsert: true }
     );
-    
+
     return itemToCache;
 }
 
@@ -124,9 +124,9 @@ export async function fetchOmdbData(query: string | null, type: 'movie' | 'serie
     if (id) {
         return fetchAndCacheOmdbDetails(id, apiKey);
     }
-    
+
     let url = `http://www.omdbapi.com/?apikey=${apiKey}`;
-    
+
     if (query) {
         url += `&s=${encodeURIComponent(query)}`;
     }
@@ -135,7 +135,7 @@ export async function fetchOmdbData(query: string | null, type: 'movie' | 'serie
     } else {
         if (!query) throw new Error("Query is required for search mode.");
     }
-    
+
     const apiResponse = await fetch(url);
     if (!apiResponse.ok) {
         throw new Error(`API call failed with status: ${apiResponse.status}`);
@@ -158,36 +158,19 @@ export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<T
     if (!accessToken) {
         throw new Error("TMDB_READ_ACCESS_TOKEN is not set. Cannot fetch trending data.");
     }
-    
-    const url = listType === 'trending'
-        ? `https://api.themoviedb.org/3/trending/all/day?language=en-US`
-        : `https://api.themoviedb.org/3/movie/popular?language=en-US`; 
 
-    const apiResponse = await fetch(url, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    
-    if (!apiResponse.ok) {
-        const errorText = await apiResponse.text();
-        console.error(`TMDb API call failed for ${listType}. Status: ${apiResponse.status}. Body: ${errorText}`);
-        throw new Error(`TMDb API call failed. Status: ${apiResponse.status}`);
-    }
-    
     const data = await apiResponse.json();
-    
+
     if (!data.results || !Array.isArray(data.results)) {
         return [];
     }
 
     const content: TrendingContent[] = data.results
-        .filter((item: any) => item.media_type !== 'person') 
+        .filter((item: any) => item.media_type !== 'person')
         .map((item: any) => ({
-            id: item.id.toString(), 
-            title: item.title || item.name, 
-            year: (item.release_date || item.first_air_date)?.substring(0, 4) || 'N/A', 
+            id: item.id.toString(),
+            title: item.title || item.name,
+            year: (item.release_date || item.first_air_date)?.substring(0, 4) || 'N/A',
             poster_path: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
             type: item.media_type === 'tv' ? 'tv' : 'movie',
             overview: item.overview || 'No overview available from TMDb.',
@@ -195,6 +178,6 @@ export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<T
             genreIds: item.genre_ids || [],
             releaseDate: item.release_date || item.first_air_date || 'N/A'
         }));
-        
+
     return content.filter(item => item.title);
 }

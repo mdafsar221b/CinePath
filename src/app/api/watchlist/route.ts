@@ -29,21 +29,6 @@ export async function POST(request: NextRequest) {
 
         // Check if item already exists in watchlist for this user
         const existingItem = await db.collection("watchlist").findOne({ id: id, userId });
-        if (existingItem) {
-            return NextResponse.json({ error: "Item already in watchlist" }, { status: 409 });
-        }
-
-        // Check if item is already watched by this user
-        const collectionName = type === 'movie' ? 'movies' : 'tv_shows';
-        const watchedItem = await db.collection(collectionName).findOne({ 
-            title: { $regex: new RegExp(`^${title}$`, 'i') },
-            userId // FILTER BY userId
-        });
-        
-        if (watchedItem) {
-            return NextResponse.json({ error: "Item already watched" }, { status: 409 });
-        }
-
         const result = await db.collection("watchlist").insertOne({
             id,
             title,
@@ -77,7 +62,7 @@ export async function DELETE(request: NextRequest) {
         const db = client.db("cinepath");
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
-        
+
         if (!id) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
