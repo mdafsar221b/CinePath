@@ -1,16 +1,8 @@
-
-
 "use client";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { SortOption } from "@/lib/types";
 import { ArrowUpDown } from "lucide-react";
+import { SortOption } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SortSelectorProps {
   value: SortOption;
@@ -20,23 +12,21 @@ interface SortSelectorProps {
 export const SortSelector = ({ value, onValueChange }: SortSelectorProps) => {
   return (
     <Select value={value} onValueChange={onValueChange}>
-      {/* Set a small, fixed width by default */}
-      <SelectTrigger className="w-[110px] glass-card"> 
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground mr-1" /> 
-        {/* Use the shortest placeholder text */}
-        <SelectValue placeholder="Sort" /> 
+      <SelectTrigger className="w-[145px]">
+        <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+        <SelectValue placeholder="Sort" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="addedAt_desc">Added-Newest</SelectItem>
-        <SelectItem value="addedAt_asc">Added-Oldest</SelectItem>
-        <SelectItem value="title_asc">A-Z</SelectItem>
-        <SelectItem value="title_desc">Z-A</SelectItem>
-        <SelectItem value="imdbRating_desc">Rating-Highest</SelectItem>
-        <SelectItem value="imdbRating_asc">Rating-Lowest</SelectItem>
-        <SelectItem value="year_desc">Newest</SelectItem>
-        <SelectItem value="year_asc">Oldest</SelectItem>
-        <SelectItem value="category_asc">Category A-Z</SelectItem> // ADDED
-        <SelectItem value="category_desc">Category Z-A</SelectItem> // ADDED
+        <SelectItem value="addedAt_desc">Newest Added</SelectItem>
+        <SelectItem value="addedAt_asc">Oldest Added</SelectItem>
+        <SelectItem value="title_asc">Title A-Z</SelectItem>
+        <SelectItem value="title_desc">Title Z-A</SelectItem>
+        <SelectItem value="imdbRating_desc">Top Rated</SelectItem>
+        <SelectItem value="imdbRating_asc">Low Rated</SelectItem>
+        <SelectItem value="year_desc">Newest Year</SelectItem>
+        <SelectItem value="year_asc">Oldest Year</SelectItem>
+        <SelectItem value="category_asc">Category A-Z</SelectItem>
+        <SelectItem value="category_desc">Category Z-A</SelectItem>
       </SelectContent>
     </Select>
   );

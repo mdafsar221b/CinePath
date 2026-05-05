@@ -23,7 +23,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-[rgba(3,6,12,0.82)] backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -40,17 +40,9 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        // Default Modal Styles (Applies to all dialogs unless overridden)
-        "fixed z-50 grid w-full gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
-        
-        // Default Positioning (CRITICAL FIX: These centering classes must be placed 
-        // LATER in the cn function to be overridden by custom classes passed in 'className')
+        "fixed z-50 grid w-full gap-4 border border-white/10 bg-[linear-gradient(180deg,rgba(18,23,35,0.97),rgba(8,12,20,0.95))] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.52)] backdrop-blur-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-[1.5rem]",
         "left-[50%] top-[50%] max-w-lg translate-x-[-50%] translate-y-[-50%]", 
-        
-        // Custom Classes (Allows sidebar's 'right-0 top-0 transform-none' to work)
         className,
-
-        // Transition classes that rely on the position set above
         "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
       )}
       {...props}

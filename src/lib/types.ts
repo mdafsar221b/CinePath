@@ -35,6 +35,7 @@ export type TmdbDetailedContent = {
   title: string;
   year: string; 
   poster_path: string | null;
+  backdrop_path?: string | null;
   type: 'movie' | 'tv';
   overview: string;
   voteAverage: number;

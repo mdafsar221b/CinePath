@@ -159,6 +159,23 @@ export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<T
         throw new Error("TMDB_READ_ACCESS_TOKEN is not set. Cannot fetch trending data.");
     }
 
+    const endpoint =
+        listType === "trending"
+            ? "https://api.themoviedb.org/3/trending/all/day?language=en-US"
+            : "https://api.themoviedb.org/3/movie/popular?language=en-US&page=1";
+
+    const apiResponse = await fetch(endpoint, {
+        headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        next: { revalidate: 60 * 60 * 6 },
+    });
+
+    if (!apiResponse.ok) {
+        throw new Error(`TMDb API call failed with status: ${apiResponse.status}`);
+    }
+
     const data = await apiResponse.json();
 
     if (!data.results || !Array.isArray(data.results)) {
@@ -172,6 +189,7 @@ export async function fetchTmdbData(listType: 'trending' | 'popular'): Promise<T
             title: item.title || item.name,
             year: (item.release_date || item.first_air_date)?.substring(0, 4) || 'N/A',
             poster_path: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+            backdrop_path: item.backdrop_path ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` : null,
             type: item.media_type === 'tv' ? 'tv' : 'movie',
             overview: item.overview || 'No overview available from TMDb.',
             voteAverage: item.vote_average ? parseFloat(item.vote_average.toFixed(1)) : 0,

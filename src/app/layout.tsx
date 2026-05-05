@@ -1,13 +1,22 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Bebas_Neue, Manrope } from "next/font/google";
 import "./globals.css";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "next-themes";
 import { AuthProviders } from "@/components/auth/AuthProviders";
 import { Toaster } from 'react-hot-toast';
 
-const inter = Inter({ subsets: ["latin"] });
+const displayFont = Bebas_Neue({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
+});
+
+const bodyFont = Manrope({
+  subsets: ["latin"],
+  variable: "--font-body",
+});
 
 export const metadata: Metadata = {
   title: "CinePath",
@@ -24,10 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className}`}>
+      <body className={`${displayFont.variable} ${bodyFont.variable} font-body`}>
         <AuthProviders> 
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <div className="flex flex-col min-h-screen bg-background text-foreground">
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <div className="app-shell flex min-h-screen flex-col bg-background text-foreground">
               <main className="flex-grow">
                 {children}
               </main>

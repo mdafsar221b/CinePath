@@ -18,9 +18,11 @@ import { NewMovie } from "@/lib/types";
 import { Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import React from "react";
 
 interface AddMovieDialogProps {
   onAddMovie: (movie: NewMovie) => void;
+  children?: React.ReactNode;
 }
 
 interface SearchResult {
@@ -30,7 +32,7 @@ interface SearchResult {
   poster_path: string | null; 
 }
 
-export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
+export const AddMovieDialog = ({ onAddMovie, children }: AddMovieDialogProps) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -131,13 +133,13 @@ export const AddMovieDialog = ({ onAddMovie }: AddMovieDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-      
-        <Button 
-            className="rounded-xl"
-            size="icon" 
-        >
+        {children ? (
+          children
+        ) : (
+          <Button className="rounded-xl" size="icon">
             <Plus className="w-5 h-5" />
-        </Button>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">
         <DialogHeader>

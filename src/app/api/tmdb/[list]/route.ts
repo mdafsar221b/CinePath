@@ -22,6 +22,11 @@ export async function GET(
         if (e instanceof Error && e.message.includes("401")) {
             return NextResponse.json({ error: "TMDb Authentication Failed. Check TMDB_READ_ACCESS_TOKEN." }, { status: 401 });
         }
-        return NextResponse.json({ error: `Failed to fetch ${listType} content.` }, { status: 500 });
+        return NextResponse.json([], {
+            status: 200,
+            headers: {
+                "x-tmdb-fallback": "unavailable",
+            },
+        });
     }
 }

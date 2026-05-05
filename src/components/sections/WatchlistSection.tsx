@@ -1,97 +1,97 @@
-// src/components/sections/WatchlistSection.tsx
+import { ArrowRight, ListVideo, Play, Search } from "lucide-react";
 import { WatchlistItem } from "@/lib/types";
 import { WatchlistCard } from "@/components/core/WatchlistCard";
 import { Badge } from "@/components/ui/badge";
-import { Search, ListVideo, ArrowRight, Play } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { WatchlistSkeleton } from "@/components/ui/SkeletonCard"; 
+import { WatchlistSkeleton } from "@/components/ui/SkeletonCard";
+
 interface WatchlistSectionProps {
   watchlist: WatchlistItem[];
   onRemove: (_id: string) => void;
   onShowDetails: (item: WatchlistItem) => void;
   onMarkWatched: (item: WatchlistItem) => void;
-  isLoading: boolean; 
+  isLoading: boolean;
 }
 
-
 const WatchlistPlaceholder = () => (
-  <div className="text-center py-12 px-6 glass-card rounded-2xl border border-primary/20 bg-primary/5">
-    <ListVideo className="w-10 h-10 mx-auto text-primary mb-4" />
-    <h3 className="text-xl font-semibold mb-2 text-foreground">
-      Your Watchlist is Empty
-    </h3>
-    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-      Start your cinematic journey by adding movies and TV shows you want to watch next.
-    </p>
-    
-    <div className="flex flex-col items-center justify-center space-y-4">
-        {/* Step 1: Search */}
-        <div className="flex items-center text-left p-4 rounded-xl border border-border/50 bg-background/50 max-w-sm w-full">
-            <Search className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
-            <p className="text-sm font-medium text-foreground">
-                1. Use the **Search Bar** at the top of the page.
-            </p>
+  <div className="glass-card rounded-[1.5rem] px-6 py-12">
+    <div className="mx-auto max-w-2xl text-center">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.5rem] bg-primary/12 text-primary">
+        <ListVideo className="h-6 w-6" />
+      </div>
+      <h3 className="mt-5 text-3xl font-semibold text-white">Your watchlist is waiting for its first title</h3>
+      <p className="mt-3 text-sm leading-7 text-muted-foreground">
+        The queue should feel alive. Search for something you want to watch next, add it to the watchlist, and move it into the main library when you finish it.
+      </p>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4 text-left">
+          <Search className="h-5 w-5 text-primary" />
+          <p className="mt-3 text-sm font-semibold text-white">1. Search first</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Use the discovery search bar on the homepage to pull in movies and series.</p>
         </div>
-        <ArrowRight className="w-5 h-5 text-muted-foreground" />
-        {/* Step 2: Add to Watchlist */}
-        <div className="flex items-center text-left p-4 rounded-xl border border-border/50 bg-background/50 max-w-sm w-full">
-            <Button size="sm" className="w-10 h-10 p-0 mr-3 flex-shrink-0 rounded-lg">
-                <Play className="w-4 h-4" />
-            </Button>
-            <p className="text-sm font-medium text-foreground">
-                2. Click the **"Watchlist" button** on a search result.
-            </p>
+        <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4 text-left">
+          <ArrowRight className="h-5 w-5 text-primary" />
+          <p className="mt-3 text-sm font-semibold text-white">2. Queue it up</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Add interesting titles to the watchlist so they stay visible and ready.</p>
         </div>
-        <ArrowRight className="w-5 h-5 text-muted-foreground" />
-        {/* Step 3: Track */}
-        <div className="flex items-center text-left p-4 rounded-xl border border-border/50 bg-background/50 max-w-sm w-full">
-            <Button size="sm" variant="outline" className="w-10 h-10 p-0 mr-3 flex-shrink-0 rounded-lg">
-                <Play className="w-4 h-4" />
-            </Button>
-            <p className="text-sm font-medium text-foreground">
-                3. When watched, click the **Play icon** on the card to move it to your main list.
-            </p>
+        <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4 text-left">
+          <Play className="h-5 w-5 text-primary" />
+          <p className="mt-3 text-sm font-semibold text-white">3. Move when watched</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Promote finished titles straight into the main archive with one click.</p>
         </div>
+      </div>
     </div>
   </div>
 );
 
-
-export const WatchlistSection = ({ watchlist, onRemove, onShowDetails, onMarkWatched, isLoading }: WatchlistSectionProps) => {
-  
+export const WatchlistSection = ({
+  watchlist,
+  onRemove,
+  onShowDetails,
+  onMarkWatched,
+  isLoading,
+}: WatchlistSectionProps) => {
   if (isLoading) {
-      return (
-        <section id="watchlist" className="mb-16">
-            {/* Skeleton Header */}
-            <div className="mb-8 h-8 w-40 bg-muted/50 rounded-lg animate-pulse" /> 
-            <WatchlistSkeleton />
-        </section>
-      );
-  }
-  
-  if (watchlist.length === 0) {
-      return null;
+    return (
+      <section id="watchlist" className="mb-16">
+        <div className="mb-8 h-8 w-40 animate-pulse rounded-lg bg-muted/50" />
+        <WatchlistSkeleton />
+      </section>
+    );
   }
 
   return (
     <section id="watchlist" className="mb-16">
-      <h2 className="text-2xl md:text-3xl font-semibold mb-8 flex items-center gap-3">
-        Watchlist
-        <Badge variant="outline" className="ml-2 text-xs">
-          {watchlist.length}
-        </Badge>
-      </h2>
-      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {watchlist.map((item) => (
-          <WatchlistCard
-            key={item._id}
-            item={item}
-            onRemove={onRemove}
-            onShowDetails={onShowDetails}
-            onMarkWatched={onMarkWatched}
-          />
-        ))}
+      <div className="section-shell">
+        <div className="relative z-10">
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-muted-foreground">Queue</p>
+              <h2 className="font-display text-5xl text-primary sm:text-6xl">Watchlist</h2>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+                A holding area for the next movie night, the next binge, and everything not watched yet.
+              </p>
+            </div>
+            <Badge variant="outline">{watchlist.length} queued</Badge>
+          </div>
+
+          {watchlist.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {watchlist.map((item) => (
+                <WatchlistCard
+                  key={item._id}
+                  item={item}
+                  onRemove={onRemove}
+                  onShowDetails={onShowDetails}
+                  onMarkWatched={onMarkWatched}
+                />
+              ))}
+            </div>
+          ) : (
+            <WatchlistPlaceholder />
+          )}
+        </div>
       </div>
     </section>
   );

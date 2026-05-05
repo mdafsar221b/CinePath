@@ -15,25 +15,31 @@ interface HeaderProps {
 export const Header = ({ dashboardButton }: HeaderProps) => { 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/50 border-b border-border/50 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/8 bg-[rgba(4,8,16,0.72)] backdrop-blur-2xl">
         <div className="container mx-auto px-4 md:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2 group">
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent transition-transform duration-300">
-                CinePath
-              </span>
+            <Link href="/" className="group flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-[0_10px_30px_rgba(255,186,73,0.16)]">
+                <span className="font-display text-2xl leading-none">C</span>
+              </div>
+              <div>
+                <span className="font-display text-4xl leading-none text-primary">
+                  CinePath
+                </span>
+                <p className="hidden text-[0.7rem] uppercase tracking-[0.28em] text-muted-foreground sm:block">
+                  Track. Discover. Rewatch.
+                </p>
+              </div>
             </Link>
             
-            {/* Desktop Navigation (Visible sm and up) */}
-            <div className="hidden sm:flex items-center gap-4">
+            <div className="hidden items-center gap-3 sm:flex">
               {dashboardButton} 
               <AuthButtons /> 
               <ThemeToggle />
             </div>
             
-            {/* Mobile Navigation (Visible below sm) */}
             <div className="sm:hidden">
-              <Sidebar dashboardButton={dashboardButton} /> {/* <--- UPDATED USAGE */}
+              <Sidebar dashboardButton={dashboardButton} />
             </div>
 
           </div>

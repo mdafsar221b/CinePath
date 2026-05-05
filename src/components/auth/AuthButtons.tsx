@@ -29,5 +29,5 @@ export const AuthButtons = () => {
     );
   }
 
-  return null;
+  return <LoginDialog />;
 };

@@ -16,9 +16,11 @@ import { useState } from "react";
 import { Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import React from "react";
 
 interface AddTVShowDialogProps {
   onAddTVShow: (id: string, title: string, poster_path: string | null) => Promise<void>;
+  children?: React.ReactNode;
 }
 
 interface SearchResult {
@@ -27,7 +29,7 @@ interface SearchResult {
   poster_path: string | null;
 }
 
-export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
+export const AddTVShowDialog = ({ onAddTVShow, children }: AddTVShowDialogProps) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -88,14 +90,17 @@ export const AddTVShowDialog = ({ onAddTVShow }: AddTVShowDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-
-        <Button
+        {children ? (
+          children
+        ) : (
+          <Button
             variant="outline"
             className="rounded-xl"
-            size="icon" 
-        >
+            size="icon"
+          >
             <Plus className="w-5 h-5" />
-        </Button>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="glass-card border-border/50 text-foreground max-w-2xl rounded-2xl">
         <DialogHeader>
